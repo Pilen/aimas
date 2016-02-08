@@ -16,8 +16,8 @@ public class Node {
 	public static int MAX_ROW = 70;
 	public static int MAX_COLUMN = 70;
 
-	private int max_row;
-	private int max_column;
+	public int max_row;
+	public int max_column;
 
 	public int agentRow;
 	public int agentCol;

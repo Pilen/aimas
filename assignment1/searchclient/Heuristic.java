@@ -1,12 +1,24 @@
 package searchclient;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.awt.Point;
+import java.lang.Character;
 
 public abstract class Heuristic implements Comparator< Node > {
 
 	public Node initialState;
+  public HashMap goals;
+
 	public Heuristic(Node initialState) {
 		this.initialState = initialState;
+    goals = new HashMap();
+    for(int x=0; x<initialState.max_row; x++){
+      for(int y=0; y<initialState.max_column; y++){
+        if(Character.isLowerCase(initialState.goals[x][y]))
+          goals.put(initialState.goals[x][y], new Point(x, y));
+      }
+    }
 	}
 
 	public int compare( Node n1, Node n2 ) {
@@ -14,7 +26,17 @@ public abstract class Heuristic implements Comparator< Node > {
 	}
 
 	public int h( Node n ) {
-		return 0;
+    int total = 0;
+    for(int x=0; x<n.max_row; x++){
+      for(int y=0; y<n.max_column; y++){
+        char c = n.boxes[x][y];
+        if(Character.isUpperCase(c)){
+          Point p = (Point)goals.get(Character.toLowerCase(c));
+          total += Math.abs(x-p.x) + Math.abs(y-p.y);
+        }
+      }
+    }
+		return total;
 	}
 
 	public abstract int f( Node n );
