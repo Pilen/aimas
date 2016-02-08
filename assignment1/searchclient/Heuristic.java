@@ -7,85 +7,85 @@ import java.lang.Character;
 
 public abstract class Heuristic implements Comparator< Node > {
 
-	public Node initialState;
-  public HashMap goals;
+    public Node initialState;
+    public HashMap goals;
 
-	public Heuristic(Node initialState) {
-		this.initialState = initialState;
-    goals = new HashMap();
-    for(int x=0; x<initialState.max_row; x++){
-      for(int y=0; y<initialState.max_column; y++){
-        if(Character.isLowerCase(initialState.goals[x][y]))
-          goals.put(initialState.goals[x][y], new Point(x, y));
-      }
-    }
-	}
-
-	public int compare( Node n1, Node n2 ) {
-		return f( n1 ) - f( n2 );
-	}
-
-	public int h( Node n ) {
-    int total = 0;
-    for(int x=0; x<n.max_row; x++){
-      for(int y=0; y<n.max_column; y++){
-        char c = n.boxes[x][y];
-        if(Character.isUpperCase(c)){
-          Point p = (Point)goals.get(Character.toLowerCase(c));
-          int dx = x-p.x;
-          int dy = y-p.y;
-          total += Math.floor(Math.sqrt(dx*dx + dy*dy));
+    public Heuristic(Node initialState) {
+        this.initialState = initialState;
+        goals = new HashMap();
+        for(int x=0; x<initialState.max_row; x++){
+            for(int y=0; y<initialState.max_column; y++){
+                if(Character.isLowerCase(initialState.goals[x][y]))
+                    goals.put(initialState.goals[x][y], new Point(x, y));
+            }
         }
-      }
     }
-		return total;
-	}
 
-	public abstract int f( Node n );
+    public int compare( Node n1, Node n2 ) {
+        return f( n1 ) - f( n2 );
+    }
 
-	public static class AStar extends Heuristic {
-		public AStar(Node initialState) {
-			super( initialState );
-		}
+    public int h( Node n ) {
+        int total = 0;
+        for(int x=0; x<n.max_row; x++){
+            for(int y=0; y<n.max_column; y++){
+                char c = n.boxes[x][y];
+                if(Character.isUpperCase(c)){
+                    Point p = (Point)goals.get(Character.toLowerCase(c));
+                    int dx = x-p.x;
+                    int dy = y-p.y;
+                    total += Math.floor(Math.sqrt(dx*dx + dy*dy));
+                }
+            }
+        }
+        return total;
+    }
 
-		public int f( Node n ) {
-			return n.g() + h( n );
-		}
+    public abstract int f( Node n );
 
-		public String toString() {
-			return "A* evaluation";
-		}
-	}
+    public static class AStar extends Heuristic {
+        public AStar(Node initialState) {
+            super( initialState );
+        }
 
-	public static class WeightedAStar extends Heuristic {
-		private int W;
+        public int f( Node n ) {
+            return n.g() + h( n );
+        }
 
-		public WeightedAStar(Node initialState) {
-			super( initialState );
-			W = 5; // You're welcome to test this out with different values, but for the reporting part you must at least indicate benchmarks for W = 5
-		}
+        public String toString() {
+            return "A* evaluation";
+        }
+    }
 
-		public int f( Node n ) {
-			return n.g() + W * h( n );
-		}
+    public static class WeightedAStar extends Heuristic {
+        private int W;
 
-		public String toString() {
-			return String.format( "WA*(%d) evaluation", W );
-		}
-	}
+        public WeightedAStar(Node initialState) {
+            super( initialState );
+            W = 5; // You're welcome to test this out with different values, but for the reporting part you must at least indicate benchmarks for W = 5
+        }
 
-	public static class Greedy extends Heuristic {
+        public int f( Node n ) {
+            return n.g() + W * h( n );
+        }
 
-		public Greedy(Node initialState) {
-			super( initialState );
-		}
+        public String toString() {
+            return String.format( "WA*(%d) evaluation", W );
+        }
+    }
 
-		public int f( Node n ) {
-			return h( n );
-		}
+    public static class Greedy extends Heuristic {
 
-		public String toString() {
-			return "Greedy evaluation";
-		}
-	}
+        public Greedy(Node initialState) {
+            super( initialState );
+        }
+
+        public int f( Node n ) {
+            return h( n );
+        }
+
+        public String toString() {
+            return "Greedy evaluation";
+        }
+    }
 }
