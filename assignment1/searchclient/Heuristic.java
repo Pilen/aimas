@@ -32,7 +32,9 @@ public abstract class Heuristic implements Comparator< Node > {
         char c = n.boxes[x][y];
         if(Character.isUpperCase(c)){
           Point p = (Point)goals.get(Character.toLowerCase(c));
-          total += Math.abs(x-p.x) + Math.abs(y-p.y);
+          int dx = x-p.x;
+          int dy = y-p.y;
+          total += Math.floor(Math.sqrt(dx*dx + dy*dy));
         }
       }
     }

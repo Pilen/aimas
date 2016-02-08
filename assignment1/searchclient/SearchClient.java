@@ -161,8 +161,8 @@ public class SearchClient {
 
 		// Ex 3:
 		//strategy = new StrategyBestFirst( new AStar( client.initialState ) );
-		//strategy = new StrategyBestFirst( new WeightedAStar( client.initialState ) );
-		strategy = new StrategyBestFirst( new Greedy( client.initialState ) );
+		strategy = new StrategyBestFirst( new WeightedAStar( client.initialState ) );
+		//strategy = new StrategyBestFirst( new Greedy( client.initialState ) );
 
 		LinkedList< Node > solution = client.Search( strategy );
 

@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{AI1}
+\author{Simon S. Linneberg s152408 }
+\date{February 2016}
+
+\begin{document}
+
+\maketitle
+
+\section{Question 1}
+\subsection{ a }
+The sortest solution is 19 moves, since that is the result of BFS. This is minimal since
+all states $n$ moves away, is considered before $m > n$ moves away. Since the first
+solution found is used, there cannot be any solutions with less moves.
+
+\subsection{ b }
+BFS performs bad on SAD2 because of the branching factor in BFS. It needs to calculate
+all branches, which is a lot of work before it gets to the depth where a solution can be found.
+This branching is caused by the many boxes, that can be pushed and pulled in many directions.\\
+
+\subsection{c}
+Since the datastructure storing the frontier int BFS was a double linked queue, we could
+return the last element instead of the first, which gave us DFS. This could easily solve
+SAD2 but the solution was inefficient.\\
+
+\subsection{d}
+We experimented with different levels, and made one that ensures that the requirements are obeyed.
+It looks like a man taking a bath, because that is fun. It is called custom2.lvl, and can be found
+in the handin.
+
+\begin{tabular}{l|l|l|l|l|l}
+  level & Client & Time & Memory Used & Solution Length & Nodes Explored\\\hline
+  SAD1 & BFS & 0.09s & 8.68 MB & 19 & 78\\
+  SAD2 & BFS & 59.91s & 1576.26 MB  & - & 32000\\
+  SAD1 & DFS & 0.07s & 5.58 MB & 27 & 44\\
+  SAD2 & DFS & 7.57s & 603.99 MB & 5781 & 6799\\
+  custom2 & DFS & 0.12s & 17.36 MB & 95 & 97\\
+  custom2 & BFS & 97.28s & 1521.45MB & - & 23000\\
+\end{tabular}
+
+\section{Question 2}
+\subsection{a}
+We fixed the flaws. See the table below.
+
+\subsection{b}
+In a map with few boxes compared to the total number of fields only a few entries in the boxes
+array is set. This wastes a lot of memory. Instead the boxes could be stored as a triple containing
+the x/y coordinate and its type. Looking up must be fast, which can be done with a hash function on
+the coordinate, or a spacial data structure that enables fast lookup.\\
+
+\begin{tabular}{l|l|l|l|l|l}
+  level & Client & Time & Memory Used & Solution Length & Nodes Explored\\\hline
+  SAD1 & BFS & 0.09s & 8.68 MB & 19 & 78\\
+  SAD2 & BFS & 59.91s & 1576.26 MB  & - & 32000\\
+  SAD1 & DFS & 0.07s & 5.58 MB & 27 & 44\\
+  SAD2 & DFS & 7.57s & 603.99 MB & 5781 & 6799\\
+  custom2 & DFS & 0.12s & 17.36 MB & 95 & 97\\
+  custom2 & BFS & 97.28s & 1521.45MB & - & 23000\\
+\end{tabular}
+
+\section{Question 3}
+\subsection{a}
+We used a priority queue, and passed the heuristic as argument, so that comparison is done by this. This way all operations can be done by calling the appropriate priority queue function.
+
+\subsection{b}
+We use the (euclidian) distance between each box and a goal of the same type (rounded down). When initializing the heuristic, all goals are added to a hashmap with the goal type (letter) as key, and coordinate as value. Measuring the heuristic is done by looping through all boxes of the node, and adding the distance between its
+coordinate, and the goal of the same coordinate. This causes a problem when there are multiple goals of the same type, since the hashmap only stores one. Alternatively we could store all goals of the same type, and take the minimum distance to any goal of the correct type, however then multiple boxes could still be measured from the same goal. Correcting this would increase the running time of the heuristic, so we didn't.\\
+
+Since we go through all cells of the level, the heuristic is O(length*height), but using a sparse data structure that can be iterated over, as described in question 2b, would give a running time equal to the number of boxes.
+
+TODO: BESKRIV EKSPERIMENTER
+
+\subsection{c}
+The heuristic is admissible if there are at most one of each type goal, since the (by the triangle inequality) no path can be shorter than the euclidian distance. By rounding down, the number of moves it takes to move
+a box to its goal will be greater than or equal to the heuristic. If there are multiple goals of the same type, an arbritary goal is choosen, and we may get an overestimate.
+
+\subsection{d}
+TODO: BESKRIV EKSPERIMENTER
+
+\end{document}
+
