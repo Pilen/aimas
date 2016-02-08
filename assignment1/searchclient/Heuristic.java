@@ -8,11 +8,11 @@ import java.lang.Character;
 public abstract class Heuristic implements Comparator< Node > {
 
     public Node initialState;
-    public HashMap goals;
+    public HashMap<Character, Point> goals;
 
     public Heuristic(Node initialState) {
         this.initialState = initialState;
-        goals = new HashMap();
+        goals = new HashMap<Character, Point>();
         for(int x=0; x<initialState.max_row; x++){
             for(int y=0; y<initialState.max_column; y++){
                 if(Character.isLowerCase(initialState.goals[x][y]))
