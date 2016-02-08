@@ -1,5 +1,6 @@
 package searchclient;
 
+import java.util.PriorityQueue;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 
@@ -118,33 +119,30 @@ public abstract class Strategy {
 	// Ex 3: Best-first Search uses a priority queue (Java contains no implementation of a Heap data structure)
 	public static class StrategyBestFirst extends Strategy {
 		private Heuristic heuristic;
+    private PriorityQueue< Node > frontier;
 		public StrategyBestFirst( Heuristic h ) {
 			super();
 			heuristic = h;
-			// Unimplemented
+      frontier = new PriorityQueue< Node >(heuristic);
 		}
 		public Node getAndRemoveLeaf() {
-			// Unimplemented
-			return null;
+			return frontier.remove();
 		}
 
 		public void addToFrontier( Node n ) {
-			// Unimplemented
+			frontier.add( n );
 		}
 
 		public int countFrontier() {
-			// Unimplemented
-			return 0;
+			return frontier.size();
 		}
 
 		public boolean frontierIsEmpty() {
-			// Unimplemented
-			return true;
+			return frontier.isEmpty();
 		}
 
 		public boolean inFrontier( Node n ) {
-			// Unimplemented
-			return false;
+			return frontier.contains( n );
 		}
 
 		public String toString() {
