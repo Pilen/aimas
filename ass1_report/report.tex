@@ -2,7 +2,7 @@
 \usepackage[utf8]{inputenc}
 
 \title{AI1}
-\author{Simon S. Linneberg s152408 }
+\author{Simon S. Linneberg s152408, Søren Pilgård S160521}
 \date{February 2016}
 
 \begin{document}
@@ -70,14 +70,46 @@ coordinate, and the goal of the same coordinate. This causes a problem when ther
 
 Since we go through all cells of the level, the heuristic is O(length*height), but using a sparse data structure that can be iterated over, as described in question 2b, would give a running time equal to the number of boxes.
 
-TODO: BESKRIV EKSPERIMENTER
-
 \subsection{c}
 The heuristic is admissible if there are at most one of each type goal, since the (by the triangle inequality) no path can be shorter than the euclidian distance. By rounding down, the number of moves it takes to move
 a box to its goal will be greater than or equal to the heuristic. If there are multiple goals of the same type, an arbritary goal is choosen, and we may get an overestimate.
 
 \subsection{d}
-TODO: BESKRIV EKSPERIMENTER
+
+\begin{tabular}{l|l|l|l|l|l}
+  level & Client & Time & Memory Used & Solution Length & Nodes Explored\\\hline
+  SAD1 & A* & 0.05s & 1.86 MB & 19 & 77\\
+  SAD1 & WA* & 0.04s & 1.86 MB & 19 & 77\\
+  SAD1 & Greedy & 0.04s & 1.86 MB & 21 & 51\\
+  \hline
+  SAD2 & A* & 2.41s & 24.36 MB  & 19 & 3904\\
+  SAD2 & WA* & 0.11s & 1.86 MB  & 21 & 118\\
+  SAD2 & Greedy & 0.33s & 13.04 MB  & 83 & 2602\\
+  \hline
+  custom2 & A* & 1.77s & 39.66 MB & 11 & 2124\\
+  custom2 & WA* & 0.11s & 2.48 MB & 21 & 57\\
+  custom2 & Greedy & 0.12s & 3.10 MB & 23 & 65\\
+  \hline
+  Firefly & A* & 3.15s & 45.05 MB & 60 & 17955\\
+  Firefly & WA* & 0.17s & 3.10 MB & 69 & 379\\
+  Firefly & Greedy & 0.26s & 6.20 MB & 365 & 1243\\
+  \hline
+  Crunch & A* & - & 142.01 MB & - & 310200\\
+  Crunch & WA* & - & 148.21MB & - & 299800\\
+  Crunch & Greedy & 9.25s & 34.31MB & 118 & 58619\\
+\end{tabular}
+
+Though DFS can get lucky and get concise solutions in good time for simple
+levels, The heuristic algorithms are better choices in general
+
+A* is great at finding good solutions but has a tendency to blow up in the
+number of nodes explored and the time used is substantially longer.
+WA* with W=5 is a nice alternative, the solutions are only slightly worse but
+the time used, the memory consumption and especially the number of explored
+nodes is much better.
+Greedy seems to end somewhere between A* and WA* but swings a lot. It seems to
+depend a lot more on the nature of the level. It has a harder time on SAD2 and
+Firefly but handles custom2 quite nicely, and it is the only aproach solving
+Crunch.
 
 \end{document}
-
