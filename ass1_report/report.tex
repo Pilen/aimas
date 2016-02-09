@@ -2,7 +2,7 @@
 \usepackage[utf8]{inputenc}
 
 \title{AI1}
-\author{Simon S. Linneberg s152408 }
+\author{Simon S. Linneberg s152408 \\ Søren Egede Pilgård s160521}
 \date{February 2016}
 
 \begin{document}
@@ -30,6 +30,14 @@ We experimented with different levels, and made one that ensures that the requir
 It looks like a man taking a bath, because that is fun. It is called custom2.lvl, and can be found
 in the handin.
 
+\subsection{e}
+We created a level where the optimal solution was just a few moves away. This means that the BFS will
+find the solution fast, since it won't reach a great depth. By creating a large space around the boxes,
+we gave the DFS a lot to explore, since it can reach very deep. Therefore it takes a lot of time.\\
+
+The experiments for this expercise was done on another computer thant the previous exersice, and may perform
+different.
+
 \begin{tabular}{l|l|l|l|l|l}
   level & Client & Time & Memory Used & Solution Length & Nodes Explored\\\hline
   SAD1 & BFS & 0.09s & 8.68 MB & 19 & 78\\
@@ -38,6 +46,8 @@ in the handin.
   SAD2 & DFS & 7.57s & 603.99 MB & 5781 & 6799\\
   custom2 & DFS & 0.12s & 17.36 MB & 95 & 97\\
   custom2 & BFS & 97.28s & 1521.45MB & - & 23000\\
+  friendofBFS & DFS & - & 275.80 MB & - & 124800 \\
+  friendofBFS & BFS &0.28 & 119MB & 9 & 4744 \\
 \end{tabular}
 
 \section{Question 2}

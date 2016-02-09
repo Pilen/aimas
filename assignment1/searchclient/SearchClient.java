@@ -155,13 +155,13 @@ public class SearchClient {
 		SearchClient client = new SearchClient( serverMessages );
 
 		Strategy strategy = null;
-		// strategy = new StrategyBFS();
+		strategy = new StrategyBFS();
 		// Ex 1:
-		// strategy = new StrategyDFS();
+		//strategy = new StrategyDFS();
 
 		// Ex 3:
 		//strategy = new StrategyBestFirst( new AStar( client.initialState ) );
-		strategy = new StrategyBestFirst( new WeightedAStar( client.initialState ) );
+		//strategy = new StrategyBestFirst( new WeightedAStar( client.initialState ) );
 		//strategy = new StrategyBestFirst( new Greedy( client.initialState ) );
 
 		LinkedList< Node > solution = client.Search( strategy );
