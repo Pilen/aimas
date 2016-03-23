@@ -40,18 +40,17 @@ func Parse() {
     }
 
     var level [70][70]rune // x, y
-    var walls [70][70]bool // x, y
     y := 0
-
-    // var width, height int
-    for err == nil {
+    for ;err == nil; line, err = reader.ReadString('\n') {
+        line = strings.TrimSpace(line)
         if (line == "") {
             continue
         }
+        p(line)
         for x, c := range line {
             level[x][y] = c
             if c == '+' {
-                walls[x][y] = true
+                wallMap[x][y] = true
             } else if unicode.IsDigit(c) {
                 NewRobot(c, x, y)
             } else if unicode.IsLetter(c) && unicode.IsLower(c) {
@@ -66,12 +65,11 @@ func Parse() {
         if len(line) > width {
             width = len(line)
         }
-        line, err = reader.ReadString('\n')
     }
 
 
-    flood_fill(&walls, width, height)
-    all_pairs_shortest_path(&walls, width, height)
+    calculateGoalPriorities()
+    all_pairs_shortest_path(&wallMap, width, height)
 }
 
 func NewRobot(c rune, x int, y int) {
@@ -81,8 +79,9 @@ func NewRobot(c rune, x int, y int) {
 }
 
 func NewGoal(c rune, x int, y int) {
-    goal := Goal{x, y, c}
-    goals = append(goals, goal)
+    goalMap[x][y] = true
+    goal := Goal{x, y, c, -1}
+    goals = append(goals, &goal)
 }
 
 func NewBox(c rune, x int, y int) {

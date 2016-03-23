@@ -3,8 +3,10 @@ package main
 var object_colors map[rune]Color
 var width, height int
 
+var wallMap [70][70]bool
 var robots []*Robot
-var goals []Goal
+var goals []*Goal
+var goalMap [70][70]bool
 
 func setupState() {
 	object_colors = make(map[rune]Color)
@@ -18,4 +20,5 @@ type Robot struct {
 type Goal struct {
 	x, y int
 	letter rune
+	priority int
 }
