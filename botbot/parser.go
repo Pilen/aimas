@@ -69,7 +69,6 @@ func Parse() {
         line, err = reader.ReadString('\n')
     }
 
-
     flood_fill(&walls, width, height)
     all_pairs_shortest_path(&walls, width, height)
 }
