@@ -47,6 +47,7 @@ func calculateGoalPriorities() {
 	}
 }
 
+
 type PathArray [][]*[][]int16;
 
 func all_pairs_shortest_path(walls *[70][70]bool, width int, height int) PathArray{
