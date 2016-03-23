@@ -2,8 +2,17 @@ package main
 
 import (
 	"errors"
-	// "fmt"
 )
+// An implementation of Pairing heaps
+// https://en.wikipedia.org/wiki/Pairing_heap
+//
+// As defined by
+// Fredman, Michael L.; Sedgewick, Robert; Sleator, Daniel D.; Tarjan, Robert E. (1986).
+// "The pairing heap: a new form of self-adjusting heap"
+// http://www.cs.cmu.edu/~sleator/papers/pairing-heaps.pdf
+//
+// Insertion O(1)
+// Extraction O(log n) amortized
 
 type Heap struct {
 	root *HeapNode
