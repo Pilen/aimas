@@ -2,7 +2,6 @@ package main
 
 import (
     "bufio"
-    "fmt"
     "os"
     "regexp"
     "strings"
@@ -29,7 +28,7 @@ func Parse() {
         if !line_regex.MatchString(line) {
             break
         }
-        fmt.Println(line)
+        print(line)
         matches := line_regex.FindStringSubmatch(line)
         color := Color(matches[1])
         objects := object_regex.FindAllString(matches[2], -1)
@@ -46,7 +45,7 @@ func Parse() {
         if (line == "") {
             continue
         }
-        p(line)
+        print(line)
         for x, c := range line {
             level[x][y] = c
             if c == '+' {
