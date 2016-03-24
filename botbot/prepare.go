@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "container/heap"
 )
 
@@ -32,7 +31,7 @@ func calculateGoalPriorities() {
 		if goalMap[current.x][current.y] {
 			priority++
 		}
-		// fmt.Printf("%v, %v = %v\n", current.x, current.y, priority)
+		// printf("%v, %v = %v\n", current.x, current.y, priority)
 		if priority < priorityMap[current.x][current.y] {
 			priorityMap[current.x][current.y] = priority
 			for _, neighbour := range neighbours(current.x, current.y) {
@@ -41,12 +40,14 @@ func calculateGoalPriorities() {
 		}
 	}
 
+    print("==== Goal priorities ====")
 	for _, goal := range goals {
 		goal.priority = priorityMap[goal.x][goal.y]
-		// fmt.Println(goal.priority)
+		printf("goal %c: (%v,%v) = %v\n", goal.letter, goal.x, goal.y, goal.priority)
 	}
 }
 
+var apspWork int
 
 type PathArray [][]*[][]int16;
 
@@ -70,27 +71,27 @@ func all_pairs_shortest_path(walls *[70][70]bool, width int, height int) PathArr
   //  for x := 0; x < width; x++ {
   //      fmt.Print(x);
   //      fmt.Print(";");
-  //      fmt.Println(y);
+  //      print(y);
   //      if(pairs[x][y] != nil){
   //        for i := 0; i < height; i++ {
   //          for j := 0; j < width; j++ {
-  //              fmt.Printf("%02d ", (*pairs[x][y])[j][i]);
+  //              printf("%02d ", (*pairs[x][y])[j][i]);
   //          }
-  //          fmt.Println("");
+  //          print("");
   //        }
   //      } else {
   //        fmt.Print("N ");
   //      }
-  //      fmt.Println("");
+  //      print("");
   //  }
-  //  fmt.Println("");
+  //  print("");
   //}
 
 
   //TEST TODO: Remove
-  fmt.Println(distance(pairs, 1, 1, 2, 1));
-  fmt.Println(distance(pairs, 1, 1, 0, 1));
-  fmt.Println(distance(pairs, 3, 1, 3, 3));
+  print(distance(pairs, 1, 1, 2, 1));
+  print(distance(pairs, 1, 1, 0, 1));
+  print(distance(pairs, 3, 1, 3, 3));
   getShortestPath(pairs, 3, 1, 3, 3, width, height);
 
   return pairs;
@@ -115,13 +116,13 @@ func checked_distance(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int
 func getShortestPath(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int, width int, height int) {
   if(apsp[xStart][yStart] == nil || apsp[xEnd][yEnd] == nil){
     //TODO: Return no path
-    fmt.Println("NO PATH1");
+    print("NO PATH1");
     return;
   }
 
   if(xStart == xEnd && yStart == yEnd){
     //TODO: Return path
-    fmt.Println("FOUND PATH");
+    print("FOUND PATH");
     return;
   }
 
@@ -132,7 +133,7 @@ func getShortestPath(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int,
 
   if(distX < 0 && distX_ < 0 && distY_ < 0 && distY < 0){
     // TODO: return no path, should not happen
-    fmt.Println("NO PATH2");
+    print("NO PATH2");
     return;
   }
   x := xStart+1;
@@ -156,7 +157,7 @@ func getShortestPath(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int,
   }
 
   //TODO: Add to path and return the final path:
-  fmt.Printf("%02d; %02d\n", x, y);
+  printf("%02d; %02d\n", x, y);
   getShortestPath(apsp, x, y, xEnd, yEnd, width, height);
 }
 
@@ -174,6 +175,7 @@ func shortest_path(x int, y int, walls *[70][70]bool, width int, height int) *[]
   for i := 0; i < width; i++ {
     arr[i] = make([]int16, height);
     for j := 0; j < height; j++ {
+        apspWork++
       arr[i][j] = -1;
       added[i][j] = false;
     }
