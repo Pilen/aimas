@@ -43,7 +43,7 @@ func Parse() {
     for ;err == nil; line, err = reader.ReadString('\n') {
         line = strings.TrimSpace(line)
         if (line == "") {
-            continue
+            break
         }
         print(line)
         for x, c := range line {

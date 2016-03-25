@@ -1,8 +1,6 @@
 package main
 
 import (
-      "fmt"
-//    "container/heap"
 )
 
 func calculateGoalPriorities() {
@@ -61,7 +59,7 @@ func all_pairs_shortest_path(walls *[70][70]bool, width int, height int) PathArr
         }
     }
 
-    printAPSP(width, height, pairs);
+    //printAPSP(width, height, pairs);
 
     return pairs;
 }
@@ -188,8 +186,8 @@ func isInside(x int, y int, width int, height int) bool {
 func printAPSP(width int, height int, pairs PathArray){
     for y := 0; y < height; y++ {
       for x := 0; x < width; x++ {
-          fmt.Print(x);
-          fmt.Print(";");
+          print(x);
+          print(";");
           print(y);
           if(pairs[x][y] != nil){
             for i := 0; i < height; i++ {
@@ -199,7 +197,7 @@ func printAPSP(width int, height int, pairs PathArray){
               print("");
             }
           } else {
-            fmt.Print("N ");
+            print("N ");
           }
           print("");
       }
