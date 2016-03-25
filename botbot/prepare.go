@@ -27,7 +27,7 @@ func calculateGoalPriorities() {
         if goalMap[current.x][current.y] {
             priority++
         }
-        // printf("%v, %v = %v\n", current.x, current.y, priority)
+        // printf("%v, %v = %v", current.x, current.y, priority)
         if priority < priorityMap[current.x][current.y] {
             priorityMap[current.x][current.y] = priority
             for _, neighbour := range neighbours(current.x, current.y) {
@@ -36,10 +36,9 @@ func calculateGoalPriorities() {
         }
     }
 
-    print("==== Goal priorities ====")
     for _, goal := range goals {
         goal.priority = priorityMap[goal.x][goal.y]
-        printf("goal %c: (%v,%v) = %v\n", goal.letter, goal.x, goal.y, goal.priority)
+        printf("goal %c: (%v,%v) = %v", goal.letter, goal.x, goal.y, goal.priority)
     }
 }
 
@@ -127,7 +126,7 @@ func getShortestPath(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int,
     }
 
     //TODO: Add to path and return the final path:
-    printf("%02d; %02d\n", x, y);
+    printf("%02d; %02d", x, y);
     getShortestPath(apsp, x, y, xEnd, yEnd, width, height);
 }
 

@@ -65,10 +65,6 @@ func Parse() {
             width = len(line)
         }
     }
-
-
-    calculateGoalPriorities()
-    all_pairs_shortest_path(&wallMap, width, height)
 }
 
 func NewRobot(c rune, x int, y int) {
