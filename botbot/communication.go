@@ -4,31 +4,52 @@ import (
     "os"
     "bufio"
     "fmt"
+    "regexp"
+    "strings"
 )
 
 func beginIOLoop(actions [][]agentAction) {
-  
+
+    response_regex, _ := regexp.Compile("^\\s*\\[\\s*true(\\s*,\\s*true)*\\s*\\]\\s*$")
+
     reader := bufio.NewReader(os.Stdin)
     var line string
     var err error
 
-    section("IO Loop")
-
     for _, jointAction := range actions {
-        fmt.Printf("[")
-        print("[")
+        fmt.Print("[")
+        printr("[")
         for i, action := range jointAction{
-            fmt.Printf(action.toString())
-            print(action.toString())
+            fmt.Print(action.toString())
+            printr(action.toString())
             if( i < len(jointAction)-1) {
-              fmt.Printf(", ")
-              print(", ")
+              fmt.Print(", ")
+              printr(", ")
             }
         }
         fmt.Printf("]\n")
-        printf("]\n")
+        print("]")
+
         line, err = reader.ReadString('\n')
-        print(line)
+        if err != nil {
+            printr(err)
+            return
+        }
+
+        line = strings.TrimSpace(line)
+        print("line:", line)
+
+        if line == "success" {
+            return
+        }
+        if line == "timeout" {
+            print("TIMEOUT")
+            return
+        }
+        if !response_regex.MatchString(line) {
+            print("ILLEGAL MOVE ENCOUNTERED")
+            return
+        }
     }
 
 }
