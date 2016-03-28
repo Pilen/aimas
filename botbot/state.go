@@ -25,7 +25,6 @@ type Goal struct {
 }
 
 // ACTIONS:
-
 type agentAction interface {
   toString() string
 }
@@ -61,4 +60,34 @@ type noop struct {
 
 func (p *noop) toString() string{
   return "NoOp"
+}
+
+// HIGHLEVEL ACTIONS:
+type highlevelAction interface {
+  destination() (int, int)
+  //checkPreconditions(state) bool
+}
+
+type moveTo struct {
+  x, y int
+}
+
+type pushTo struct {
+  x, y int
+}
+
+type pullTo struct {
+  x, y int
+}
+
+func (p *moveTo) destination() (int, int){
+  return p.x, p.y
+}
+
+func (p *pushTo) destination() (int, int){
+  return p.x, p.y
+}
+
+func (p *pullTo) destination() (int, int){
+  return p.x, p.y
 }
