@@ -6,18 +6,20 @@ import (
     "os"
     "runtime"
     "time"
+    "golang.org/x/net/websocket"
 )
 
 func d(v interface{}) {
-    printf("%#v %T\n", v, v)
+    logCh <- fmt.Sprintf("%#v %T\n", v, v)
 }
-
 func print(values ...interface{}) {
-    fmt.Fprintln(os.Stderr, values...)
+    logCh <- fmt.Sprintln(values...)
 }
-
 func printf(format string, values ...interface{}) {
-    fmt.Fprintf(os.Stderr, format + "\n", values...)
+    logCh <- fmt.Sprintf(format + "\n", values...)
+}
+func printr(values ...interface{}) {
+    logCh <- fmt.Sprint(values...)
 }
 
 func humanBytes(bytes uint64) string {
@@ -36,7 +38,7 @@ func section(title string) {
     print("")
     memoryUsage()
     timeElapsed()
-    printf("\n\n====== %s ======", title)
+    printf("\n\n\n\n<section>====== %s ======</section>", title)
 }
 func memoryUsage() {
     // Alloc      uint64 // bytes allocated and not yet freed
@@ -45,13 +47,17 @@ func memoryUsage() {
     // HeapSys      uint64 // bytes obtained from system
     var mem runtime.MemStats
     runtime.ReadMemStats(&mem)
-    printf("# Memory usage #")
-    printf("Alloc: %v\nTotalAlloc: %v\nHeapAlloc: %v\nHeapSys: %v\nGC: %v",
+	tag := "<memory>\n"
+	header := "# Memory usage #\n"
+	content := "Alloc: %v\nTotalAlloc: %v\nHeapAlloc: %v\nHeapSys: %v\nGC: %v\n"
+	endtag := "</memory>"
+    printf(tag + header + content + endtag,
         humanBytes(mem.Alloc),
         humanBytes(mem.TotalAlloc),
         humanBytes(mem.HeapAlloc),
         humanBytes(mem.HeapSys),
         mem.NumGC)
+
 
 }
 
@@ -74,10 +80,38 @@ func timeElapsed() {
     sinceLast := now.Sub(lastTime)
     sinceStart := now.Sub(startTime)
     lastTime = now
-    printf("Time: %s / %s", sinceLast, sinceStart)
+    printf("<time>Time: %s / %s</time>", sinceLast, sinceStart)
 }
 
+var logCh chan string
+func logSender(ch chan string, ws *websocket.Conn) {
+    defer wg.Done()
+    if ws == nil {
+        for msg := range ch {
+            fmt.Fprint(os.Stderr, msg)
+        }
+    } else {
+        for msg := range ch {
+            _, err := ws.Write([]byte(msg))
+            if err != nil {
+                fmt.Fprint(os.Stderr, err)
+            }
+        }
+    }
+}
 func init() {
     startTime = time.Now()
     lastTime = startTime
+
+
+    logCh = make(chan string, 100)
+    logCh <- "####START####"
+    origin := "http://localhost/"
+    url := "ws://localhost:8000/websocket"
+    ws, err := websocket.Dial(url, "", origin)
+    if err != nil {
+        ws = nil
+    }
+    wg.Add(1)
+    go logSender(logCh, ws)
 }

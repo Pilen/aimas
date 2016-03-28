@@ -3,16 +3,12 @@ package main
 import (
     // "net/http"
     // _ "net/http/pprof"
-    // "sync"
-    // "time"
+    "sync"
+    "time"
 )
 
+var wg sync.WaitGroup
 func main() {
-    // go func() {
-    //  print(http.ListenAndServe("localhost:6060", nil))
-    // }()
-    // time.Sleep(10 * time.Second)
-
     section("Start")
     setupState()
     Parse()
@@ -20,15 +16,18 @@ func main() {
     calculateGoalPriorities()
     section("APSP")
     all_pairs_shortest_path(&wallMap, width, height)
+    printf("APSP work: %v", apspWork)
 
     section("Work")
 
-    printf("APSP work: %v", apspWork)
-    section("Finished")
-    // var wg sync.WaitGroup
-    // wg.Add(1)
-    // wg.Wait()
+    section("Send plan")
+    time.Sleep(1*time.Second)
     beginIOLoop(hardcodedSolution2())
+
+    section("Finished")
+    close(logCh)
+    wg.Wait()
+    // for {print(".\n")}
 }
 
 // Hardcoded solution for SAsimple1.lvl
