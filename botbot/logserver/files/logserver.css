@@ -1,0 +1,33 @@
+body {
+    background-color: #303030;
+    color: #ffffff;
+    font-size: 0.80em;
+    font-family: Monospace;
+    white-space: pre;
+    display: block;
+    margin: 1em 0px 1em;
+}
+
+red {
+    color: #ff0000;
+}
+
+green {
+    color: #00ff00;
+}
+
+blue {
+    color: #0000ff;
+}
+
+section {
+    font-size: 1.5em;
+    color: #ccccff;
+}
+memory {
+    color: #aaaaaa;
+    /* color: #c000c0; */
+}
+time {
+    color: #aaaaaa;
+}
