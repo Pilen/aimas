@@ -15,30 +15,30 @@ type Task interface {
 
 // HIGHLEVEL ACTIONS:
 type highlevelAction interface {
-  destination() (int, int)
+  destination() Coordinate
   //checkPreconditions(state) bool
 }
 
 type moveTo struct {
-  x, y int
+  dest Coordinate
 }
 
 type pushTo struct {
-  x, y int
+  dest Coordinate
 }
 
 type pullTo struct {
-  x, y int
+  dest Coordinate
 }
 
-func (p *moveTo) destination() (int, int){
-  return p.x, p.y
+func (p *moveTo) destination() Coordinate {
+  return p.dest
 }
 
-func (p *pushTo) destination() (int, int){
-  return p.x, p.y
+func (p *pushTo) destination() Coordinate{
+  return p.dest
 }
 
-func (p *pullTo) destination() (int, int){
-  return p.x, p.y
+func (p *pullTo) destination() Coordinate{
+  return p.dest
 }
