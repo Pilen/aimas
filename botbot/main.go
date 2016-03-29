@@ -12,17 +12,25 @@ func main() {
     section("Start")
     setupState()
     Parse()
+    printf("w:%d, h:%d\n", width, height)
     section("Goal priorities")
     calculateGoalPriorities()
     section("APSP")
-    all_pairs_shortest_path(&wallMap, width, height)
+    apsp := all_pairs_shortest_path(&wallMap)
     printf("APSP work: %v", apspWork)
 
     section("Work")
+    //printAPSP(apsp);
 
     section("Send plan")
     time.Sleep(1*time.Second)
-    beginIOLoop(hardcodedSolution2())
+
+    path := moveToPlan(apsp, 8, 1, &moveTo{10, 3})
+    path2 := pushToPlan(apsp, 10, 3, 10, 4, &pushTo{3, 5})
+    path3 := pullToPlan(apsp, 4, 5, 3, 5, &pullTo{7, 1})
+    mPath := merge(append(path, append(path2, path3...)...))
+
+    beginIOLoop(mPath)
 
     section("Finished")
     close(logCh)
