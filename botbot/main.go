@@ -4,7 +4,7 @@ import (
     // "net/http"
     // _ "net/http/pprof"
     "sync"
-    "time"
+    // "time"
 )
 
 var wg sync.WaitGroup
@@ -16,21 +16,19 @@ func main() {
     section("Goal priorities")
     calculateGoalPriorities()
     section("APSP")
-    apsp := all_pairs_shortest_path(&wallMap)
+    all_pairs_shortest_path(&wallMap)
     printf("APSP work: %v", apspWork)
 
     section("Work")
     //printAPSP(apsp);
+    // path := moveToPlan(apsp, 8, 1, &moveTo{10, 3})
+    // path2 := pushToPlan(apsp, 10, 3, 10, 4, &pushTo{3, 5})
+    // path3 := pullToPlan(apsp, 4, 5, 3, 5, &pullTo{7, 1})
+    // mPath := merge(append(path, append(path2, path3...)...))
+    createSolution()
 
     section("Send plan")
-    time.Sleep(1*time.Second)
-
-    path := moveToPlan(apsp, 8, 1, &moveTo{10, 3})
-    path2 := pushToPlan(apsp, 10, 3, 10, 4, &pushTo{3, 5})
-    path3 := pullToPlan(apsp, 4, 5, 3, 5, &pullTo{7, 1})
-    mPath := merge(append(path, append(path2, path3...)...))
-
-    beginIOLoop(mPath)
+    // beginIOLoop(mPath)
 
     section("Finished")
     close(logCh)
@@ -80,4 +78,20 @@ func hardcodedSolution2() [][]agentAction {
     actions[16][1] = &push{'E', 'E'}
 
     return actions
+}
+
+
+
+
+
+
+func createSolution() {
+    // current := Startstate
+    // for !isSolved(current) {
+    //     findTask -> heap
+    //     tasklist <- heap
+    //     get naiveplans from tasklist
+    //     merge naiveplans
+
+    // }
 }

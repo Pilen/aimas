@@ -8,6 +8,8 @@ var robots []*Robot
 var goals []*Goal
 var goalMap [70][70]bool
 
+
+var apsp PathArray
 func setupState() {
 	object_colors = make(map[rune]Color)
 }
@@ -24,70 +26,8 @@ type Goal struct {
 	priority int
 }
 
-// ACTIONS:
-type agentAction interface {
-  toString() string
-}
-
-type move struct {
-  direction rune
-}
-
-func (p *move) toString() string{
-  return "Move(" + string(p.direction) + ")";
-}
-
-type push struct {
-  agentDirection rune
-  boxDirection rune
-}
-
-func (p *push) toString() string{
-  return "Push(" + string(p.agentDirection)+", " + string(p.boxDirection) + ")";
-}
-
-type pull struct {
-  agentDirection rune
-  boxDirection rune
-}
-
-func (p *pull) toString() string{
-  return "Pull(" + string(p.agentDirection)+", " + string(p.boxDirection) + ")";
-}
-
-type noop struct {
-}
-
-func (p *noop) toString() string{
-  return "NoOp"
-}
-
-// HIGHLEVEL ACTIONS:
-type highlevelAction interface {
-  destination() (int, int)
-  //checkPreconditions(state) bool
-}
-
-type moveTo struct {
-  x, y int
-}
-
-type pushTo struct {
-  x, y int
-}
-
-type pullTo struct {
-  x, y int
-}
-
-func (p *moveTo) destination() (int, int){
-  return p.x, p.y
-}
-
-func (p *pushTo) destination() (int, int){
-  return p.x, p.y
-}
-
-func (p *pullTo) destination() (int, int){
-  return p.x, p.y
+type State struct {
+	relevance int
+	reservations [][]Coordinate
+	actions []agentAction
 }

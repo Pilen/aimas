@@ -44,24 +44,22 @@ var apspWork int
 
 type PathArray [][]*[][]int;
 
-func all_pairs_shortest_path(walls *[70][70]bool) PathArray{
+func all_pairs_shortest_path(walls *[70][70]bool) {
     // TODO Fix...
     //width -= 2;
     //height -= 1;
 
-    var pairs PathArray;
-    pairs = make([][]*[][]int, width);
+    apsp = make([][]*[][]int, width);
 
     for x := 0; x < width; x++ {
-        pairs[x] = make([]*[][]int, height);
+        apsp[x] = make([]*[][]int, height);
         for y := 0; y < height; y++ {
-            pairs[x][y] = shortest_path(x, y, walls);
+            apsp[x][y] = shortest_path(x, y, walls);
         }
     }
 
     //printAPSP(width, height, pairs);
 
-    return pairs;
 }
 
 func distance(apsp PathArray, xStart int, yStart int, xEnd int, yEnd int) int{
@@ -101,7 +99,7 @@ func moveToPlan(apsp PathArray,
 
 func pushToPlan(apsp PathArray,
                 xStart, yStart,
-                xBox, yBox int, 
+                xBox, yBox int,
                 hlAction highlevelAction) []agentAction{
 
     xEnd, yEnd := hlAction.destination()
@@ -121,7 +119,7 @@ func pushToPlan(apsp PathArray,
 
 func pullToPlan(apsp PathArray,
                 xStart, yStart,
-                xBox, yBox int, 
+                xBox, yBox int,
                 hlAction highlevelAction) []agentAction{
 
     xEnd, yEnd := hlAction.destination()
