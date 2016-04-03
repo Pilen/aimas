@@ -30,4 +30,5 @@ type State struct {
 	relevance int
 	reservations [][]Coordinate
 	actions []agentAction
+	task *Task
 }
