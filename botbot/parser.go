@@ -80,5 +80,7 @@ func NewGoal(c rune, x int, y int) {
 }
 
 func NewBox(c rune, x int, y int) {
-
+    color := object_colors[c]
+    box := Box{x, y, color}
+    boxes = append(boxes, &box)
 }

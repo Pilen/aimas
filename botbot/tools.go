@@ -22,3 +22,20 @@ func neighbours(x, y int) ([]Coordinate) {
 
 	return coordinates
 }
+
+func isNeigbours(a, b Coordinate) bool{
+  if(a.x == b.x && a.y == b.y+1){
+    return true
+  }
+  if(a.x == b.x && a.y == b.y-1){
+    return true
+  }
+  if(a.x == b.x+1 && a.y == b.y){
+    return true
+  }
+  if(a.x == b.x-1 && a.y == b.y){
+    return true
+  }
+
+  return false
+}

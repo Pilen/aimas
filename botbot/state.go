@@ -4,6 +4,7 @@ var object_colors map[rune]Color
 var width, height int
 
 var wallMap [70][70]bool
+var boxes []*Box
 var robots []*Robot
 var goals []*Goal
 var goalMap [70][70]bool
@@ -15,6 +16,12 @@ func setupState() {
 }
 
 type Color string
+
+type Box struct {
+	x, y int
+	color Color
+}
+
 type Robot struct {
 	x, y int
 	color Color
@@ -30,4 +37,6 @@ type State struct {
 	relevance int
 	reservations [][]Coordinate
 	actions []agentAction
+  robots []*Robot
+  boxes []*Box
 }
