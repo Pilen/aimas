@@ -39,4 +39,5 @@ type State struct {
 	actions []agentAction
   robots []*Robot
   boxes []*Box
+	task *Task
 }

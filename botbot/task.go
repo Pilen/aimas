@@ -2,7 +2,7 @@ package main
 
 type Task interface {
 	// precondition() int
-	// getPlan(robot, box, destination, currentState, currentActions) {State, actions}
+	// getPlan(robot, box, destination, currentState, currentActions) State
 }
 
 
