@@ -19,7 +19,7 @@ func calculateGoalPriorities() {
     var toBeVisited Heap
 
     for _, robot := range robots {
-        node := priorityNode{robot.x, robot.y, 0}
+        node := priorityNode{robot.pos.x, robot.pos.y, 0}
         toBeVisited.Insert(node, 0)
     }
 
@@ -40,7 +40,7 @@ func calculateGoalPriorities() {
     }
 
     for _, goal := range goals {
-        goal.priority = priorityMap[goal.x][goal.y]
-        printf("goal %c: (%v,%v) = %v", goal.letter, goal.x, goal.y, goal.priority)
+        goal.priority = priorityMap[goal.pos.x][goal.pos.y]
+        printf("goal %c: (%v,%v) = %v", goal.letter, goal.pos.x, goal.pos.y, goal.priority)
     }
 }

@@ -69,18 +69,18 @@ func Parse() {
 
 func NewRobot(c rune, x int, y int) {
     color := object_colors[c]
-    robot := Robot{x, y, color, nil}
+    robot := Robot{Coordinate{x, y}, color, nil}
     robots = append(robots, &robot)
 }
 
 func NewGoal(c rune, x int, y int) {
     goalMap[x][y] = true
-    goal := Goal{x, y, c, -1}
+    goal := Goal{Coordinate{x, y}, c, -1}
     goals = append(goals, &goal)
 }
 
 func NewBox(c rune, x int, y int) {
     color := object_colors[c]
-    box := Box{x, y, color}
+    box := Box{Coordinate{x, y}, color}
     boxes = append(boxes, &box)
 }

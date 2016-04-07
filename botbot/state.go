@@ -18,21 +18,21 @@ func setupState() {
 type Color string
 
 type Box struct {
-	x, y int
-	// coordinate Coordinate
+	// x, y int
+	pos Coordinate
 	color Color
 }
 
 type Robot struct {
-	x, y int
-	// coordinate Coordinate
+	// x, y int
+	pos Coordinate
 	color Color
 	next *Robot // Internaly used by the state generator
 }
 
 type Goal struct {
-	x, y int
-	// coordinate Coordinate
+	// x, y int
+	pos Coordinate
 	letter rune
 	priority int
 }
