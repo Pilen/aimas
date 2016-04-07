@@ -69,7 +69,7 @@ func Parse() {
 
 func NewRobot(c rune, x int, y int) {
     color := object_colors[c]
-    robot := Robot{x, y, color}
+    robot := Robot{x, y, color, nil}
     robots = append(robots, &robot)
 }
 

@@ -19,25 +19,30 @@ type Color string
 
 type Box struct {
 	x, y int
+	// coordinate Coordinate
 	color Color
 }
 
 type Robot struct {
 	x, y int
+	// coordinate Coordinate
 	color Color
+	next *Robot // Internaly used by the state generator
 }
 
 type Goal struct {
 	x, y int
+	// coordinate Coordinate
 	letter rune
 	priority int
 }
 
 type State struct {
 	relevance int
-	reservations [][]Coordinate
+	reservations map[Coordinate]bool
 	actions []agentAction
-  robots []*Robot
-  boxes []*Box
-	task *Task
+	robots []*Robot
+	boxes []*Box
+	goalsLeft int
+	// task *Task
 }
