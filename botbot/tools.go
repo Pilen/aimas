@@ -4,7 +4,9 @@ type Coordinate struct {
 	x, y int
 }
 
-func neighbours(x, y int) ([]Coordinate) {
+func neighbours(coordinate Coordinate) ([]Coordinate) {
+	x := coordinate.x
+	y := coordinate.y
 	// North, South, West, East
 	coordinates := make([]Coordinate, 0, 4)
 	if y != 0 && !wallMap[x][y-1] {
@@ -38,4 +40,21 @@ func isNeigbours(a, b Coordinate) bool{
   }
 
   return false
+}
+
+func direction(from Coordinate, to Coordinate) rune {
+	if !isNeigbours(from, to) {panic("ASSERTION FAILED: from and to must be neighbours")}
+	if to.y > from.y {
+		return 'N'
+	}
+	if to.y < from.y {
+		return 'S'
+	}
+	if to.x > from.x {
+		return 'E'
+	}
+	if to.x < from.x {
+		return 'W'
+	}
+	panic("ASSERTION FAILED: from == to")
 }

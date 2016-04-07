@@ -3,6 +3,11 @@ package main
 import (
 )
 
+type priorityNode struct {
+    x, y int
+    priority int
+}
+
 func calculateGoalPriorities() {
     var priorityMap [70][70]int
     for x := 0; x < 70; x++ {
@@ -28,7 +33,7 @@ func calculateGoalPriorities() {
         // printf("%v, %v = %v", current.x, current.y, priority)
         if priority < priorityMap[current.x][current.y] {
             priorityMap[current.x][current.y] = priority
-            for _, neighbour := range neighbours(current.x, current.y) {
+            for _, neighbour := range neighbours(Coordinate{current.x, current.y}) {
                 toBeVisited.Insert(priorityNode{neighbour.x, neighbour.y, priority}, priority)
             }
         }
@@ -39,4 +44,3 @@ func calculateGoalPriorities() {
         printf("goal %c: (%v,%v) = %v", goal.letter, goal.x, goal.y, goal.priority)
     }
 }
-

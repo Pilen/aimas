@@ -50,12 +50,12 @@ func nextNode(start, end Coordinate) (next Coordinate, dir rune) {
 
     if(minDist < 0 || distX_ < minDist && distX_ >= 0){
         next.x = start.x-1
-        next.y = start.y 
+        next.y = start.y
         minDist = distX_
         dir = 'W'
     }
     if(minDist < 0 || distY < minDist && distY >= 0){
-        next.x = start.x 
+        next.x = start.x
         next.y = start.y+1
         minDist = distY
         dir = 'S'
@@ -68,11 +68,6 @@ func nextNode(start, end Coordinate) (next Coordinate, dir rune) {
     }
 
     return next, dir
-}
-
-type priorityNode struct {
-    x, y int
-    priority int
 }
 
 /*
