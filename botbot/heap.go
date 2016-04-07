@@ -17,6 +17,7 @@ import (
 type Heap struct {
 	root *HeapNode
 	size int
+	totalKey int
 }
 
 type HeapNode struct {
@@ -35,6 +36,7 @@ func (h *Heap) Insert(value interface{}, key int) {
 		h.root = heapLink(h.root, node)
 	}
 	h.size++
+	h.totalKey += key
 
 }
 func (h *Heap) IsEmpty() bool {
@@ -45,14 +47,23 @@ func (h *Heap) Extract() interface{} {
 		panic("Heap empty")
 	} else {
 		value := h.root.value
-		h.root = heapReduce(h.root)
+		h.totalKey -= h.root.key
 		h.size--
+		h.root = heapReduce(h.root)
 		return value
 	}
 }
 
 func (h *Heap) Size() int {
 	return h.size
+}
+
+func (h *Heap) avgKey() int {
+	return h.totalKey / h.size
+}
+
+func (h *Heap) minKey() int {
+	return h.root.key
 }
 
 func (h *Heap) Peek() (interface{}, error){
