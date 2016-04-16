@@ -44,16 +44,16 @@ func isNeigbours(a, b Coordinate) bool{
 
 func direction(from Coordinate, to Coordinate) rune {
 	if !isNeigbours(from, to) {panic("ASSERTION FAILED: from and to must be neighbours")}
-	if to.y > from.y {
+	if to.y < from.y {
 		return 'N'
 	}
-	if to.y < from.y {
+	if to.y > from.y {
 		return 'S'
 	}
-	if to.x > from.x {
+	if to.x < from.x {
 		return 'E'
 	}
-	if to.x < from.x {
+	if to.x > from.x {
 		return 'W'
 	}
 	panic("ASSERTION FAILED: from == to")

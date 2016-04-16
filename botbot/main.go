@@ -25,10 +25,10 @@ func main() {
     // path2 := pushToPlan(apsp, 10, 3, 10, 4, &pushTo{3, 5})
     // path3 := pullToPlan(apsp, 4, 5, 3, 5, &pullTo{7, 1})
     // mPath := merge(append(path, append(path2, path3...)...))
-    createSolution()
+    plan := search()
 
     section("Send plan")
-    // beginIOLoop(mPath)
+    beginIOLoop(plan)
 
     section("Finished")
     close(logCh)
