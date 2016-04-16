@@ -50,10 +50,10 @@ func direction(from Coordinate, to Coordinate) rune {
 	if to.y > from.y {
 		return 'S'
 	}
-	if to.x < from.x {
+	if to.x > from.x {
 		return 'E'
 	}
-	if to.x > from.x {
+	if to.x < from.x {
 		return 'W'
 	}
 	panic("ASSERTION FAILED: from == to")

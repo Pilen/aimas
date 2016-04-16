@@ -24,15 +24,16 @@ func search() [][]agentAction {
   for !frontier.IsEmpty() {
     previous = frontier.Extract().(*SimpleState)
     print("checking: " + getHash(previous))
-    if(isDone(previous.boxes) || /* TODO */ (previous.robots[0].pos.y == 3 && previous.robots[0].pos.x == 4)){
-      //result := make([][]agentAction, 1)
+    if(previous != nil && previous.action != nil){
+      print( "Type " + previous.action.toString())
+    }
+    if(isDone(previous.boxes) == 0){
       var result [][]agentAction
-      //i := 0
       for previous.previous != nil {
         print(previous.action.toString())
         newActionList := make([]agentAction, 1)
         newActionList[0] = previous.action
-        result = append(result, newActionList)
+        result = append([][]agentAction{newActionList}, result...)
         previous = previous.previous
       }
       print("GOOD PATH")
@@ -82,7 +83,8 @@ func all_child_states(state *State) []State {
 }
 
 func heuristic(state *SimpleState) int {
-  return 0
+  printf("h: %d\n", isDone(state.boxes))
+  return isDone(state.boxes)
 }
 
 func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, frontier *Heap, visitedStates *map[string]bool) {
@@ -102,65 +104,113 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
 	// MOVE
 	for _, neighbour := range neighbours(robot.pos) {
     printf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
- // 	if (!reserved(neighbour, previous) &&
- // 		!state.reservations[neighbour] &&
- // 		!wallMap[neighbour.x][neighbour.y]) {
     if ( isFree(neighbour, previous) ) {
+      print("neighbour is free");
 			// Create simple state - Reserve neighbour
-      newRobots := make([]*Robot, len(previous.robots))
-      // Copy robots for new state:
-      for i, r := range previous.robots {
-        // If the robot is the one that is being moved we create a new robot and change the coordinate,
-        // otherwise we can keep the old robot to save memory.
-        if(r.pos == robot.pos){
-          newRobots[i] = &Robot{neighbour, r.color, nil};
-        } else {
-          newRobots[i] = r;
-        }
-      }
+      newRobots := newRobotsState(previous, robot, neighbour)
       newAction := move{direction(robot.pos, neighbour)}
-      newState := SimpleState{&newAction, previous, newRobots, boxes}
+      newState := SimpleState{&newAction, previous, newRobots, previous.boxes}
       newHash := getHash(&newState)
+      print(newHash)
       if(!(*visitedStates)[newHash]){
         print("INSERTING")
         frontier.Insert(&newState, heuristic(&newState))
-        //appended := append(*newStates, &newState)
-        //newStates = &appended
         (*visitedStates)[newHash] = true
+      } else {
+         // TODO: this should check if the new way is better
       }
 		}
 	}
 
 	// PUSH / PULL
-	for _, box := range state.boxes {
-		if !isNeigbours(robot.pos, box.pos) || reserved(box.pos, previous) {
+	for _, box := range previous.boxes {
+    print("BOX");
+		if !isNeigbours(robot.pos, box.pos) { /* || reserved(box.pos, previous) */
+      printf("NN: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box.pos.x, box.pos.y)
 			continue
 		}
 		for _, box_dest := range neighbours(box.pos) {
+      printf("CONSIDERING: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
 			if box_dest == robot.pos {
 				// PULL
 				for _, robot_dest := range neighbours(robot.pos) {
 					if robot_dest != box_dest {
-						if (!reserved(robot_dest, previous) &&
-							!state.reservations[robot_dest] &&
-							!wallMap[robot_dest.x][robot_dest.y]) {
-							// Create simple state - Reserve box + dest
-						}
-					} // else already handled
+				    // Create simple state - Reserve box + dest
+            if(isFree(robot_dest, previous)){
+              newRobots := newRobotsState(previous, robot, robot_dest)
+              newAction := pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos)}
+              newBoxes  := newBoxState(previous, box, box_dest)
+              newState  := SimpleState{&newAction, previous, newRobots, newBoxes}
+              newHash   := getHash(&newState)
+              if(!(*visitedStates)[newHash]){
+                print("INSERTING PULL")
+                frontier.Insert(&newState, heuristic(&newState))
+                (*visitedStates)[newHash] = true
+              } else {
+                 // TODO: this should check if the new way is better
+              }
+            }
+					}
 				}
 			} else {
 				// PUSH
-				if (!reserved(box_dest, previous) &&
-					!state.reservations[box_dest] &&
-					!wallMap[box_dest.x][box_dest.y]) {
-					// Create simple state - Reserve box + dest
-				}
+        if(isFree(box_dest, previous)){
+          // Create simple state - Reserve box + dest
+          newRobots := newRobotsState(previous, robot, box.pos)
+          newAction := push{direction(robot.pos, box.pos), direction(box.pos, box_dest)}
+          newBoxes  := newBoxState(previous, box, box_dest)
+          newState  := SimpleState{&newAction, previous, newRobots, newBoxes}
+          newHash   := getHash(&newState)
+          if(!(*visitedStates)[newHash]){
+            print("INSERTING PUSH")
+            frontier.Insert(&newState, heuristic(&newState))
+            (*visitedStates)[newHash] = true
+          } else {
+             // TODO: this should check if the new way is better
+          }
+        }
 			}
 		}
 	}
 }
 
+/*
+ * Returns a new []*Robot where each *Robot is the same as in state.robots
+ * Except for the one that is being moved, which is a new *Robot with updated
+ * coordinate
+*/
+func newRobotsState(state *SimpleState, robot *Robot, newPos Coordinate) []*Robot {
+  newRobots := make([]*Robot, len(state.robots))
+  // Copy robots for new state:
+  for i, r := range state.robots {
+    // If the robot is the one that is being moved we create a new robot and change the coordinate,
+    // otherwise we can keep the old robot to save memory.
+    if(r.pos == robot.pos){
+      newRobots[i] = &Robot{newPos, r.color, nil}
+    } else {
+      newRobots[i] = r
+    }
+  }
+  return newRobots
+}
+
+func newBoxState(state *SimpleState, box *Box, newPos Coordinate) []*Box{
+  newBoxes := make([]*Box, len(state.boxes))
+  // Copy boxes for new state:
+  for i, b := range state.boxes {
+    // If the box is the one that is being moved we create a new box and change the coordinate,
+    // otherwise we can keep the old box to save memory.
+    if(b.pos == box.pos){
+      newBoxes[i] = &Box{newPos, b.color}
+    } else {
+      newBoxes[i] = b
+    }
+  }
+  return newBoxes
+}
+
 func isFree(coordinate Coordinate, state *SimpleState) bool {
+  //printf("isFree(%d, %d) ?: " + getHash(state), coordinate.x, coordinate.y)
   if(wallMap[coordinate.x][coordinate.y]){
     return false
   } 
@@ -186,8 +236,9 @@ func occupied(x int, y int, state *State) bool {
 	return state.reservations[Coordinate{x, y}]
 }
 
-func isDone(boxes []*Box) bool {
+func isDone(boxes []*Box) int {
   //TODO: make faster
+  res := 0
   for _, goal := range goals {
     found := false
     for _, box := range boxes {
@@ -197,10 +248,10 @@ func isDone(boxes []*Box) bool {
       }
     }
     if !found {
-      return false
+       res += 1
     }
   }
-  return true
+  return res
 }
 
 // NoOp
