@@ -7,7 +7,7 @@ import (
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
 
-  print("SEARCHING")
+  dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
   var initialA []agentAction
@@ -23,14 +23,14 @@ func search() [][]agentAction {
 	// A* algorithm
   for !frontier.IsEmpty() {
     previous = frontier.Extract().(*SimpleState)
-    print("checking: " + getHash(previous))
+    dprint("checking: " + getHash(previous))
     if(isDone(previous.boxes) == 0){
       var result [][]agentAction
       for previous.previous != nil {
         result = append([][]agentAction{*previous.action}, result...)
         previous = previous.previous
       }
-      print("GOOD PATH")
+      dprint("GOOD PATH")
       return result
     }
     // Generate actions for the first robot that has not been calculated using
@@ -38,19 +38,19 @@ func search() [][]agentAction {
     for i, b := range previous.calculated {
       if(!b){
         // If the i'th robot has not had its actions calculated then do it:
-        printf("index = %d (true)\n", i)
+        dprintf("index = %d (true)\n", i)
         generate_robot_actions(i, previous.robots[i], previous, &state, &frontier, &visitedStates)
         break
       }else if (i == len(previous.calculated)-1) {
         // If all robots had its actions generated from this state, create a new one.
-        printf("index = 0 (false)\n")
+        dprintf("index = 0 (false)\n")
         generate_robot_actions(0, previous.robots[0], previous, &state, &frontier, &visitedStates)
         break
       }
     }
   }
 
-  print("NO PATH")
+  dprint("NO PATH")
   return make([][]agentAction, 0)
 }
 
@@ -110,7 +110,7 @@ func newActionsState(state *SimpleState, i int) *[]agentAction {
   res := make([]agentAction, len(robots))
   for j, a := range *state.action {
     res[j] = a
-    print((*a).toString())
+    dprint((*a).toString())
   }
   return &res
 }
@@ -144,7 +144,7 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
   // TODO  REMOvE THIS
   //robot = previous.robots[0]
 
-  printf("GENERATING: %d; %d\n", robot.pos.x, robot.pos.y)
+  dprintf("GENERATING: %d; %d\n", robot.pos.x, robot.pos.y)
 	// NOP
 	if !reserved(robot.pos, previous) {
 		// Create simple state - no extra reservations
@@ -161,22 +161,22 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
   //TODO: NOOP 
 	// MOVE
 	for _, neighbour := range neighbours(robot.pos) {
-    printf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
+    dprintf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
     if ( isFree(neighbour, previous) ) {
-      print("neighbour is free");
+      dprint("neighbour is free");
 			// Create simple state - Reserve neighbour
       newRobots := newRobotsState(previous, robot, neighbour)
       newActions := newActionsState(previous, i)
       (*newActions)[i] = &move{direction(robot.pos, neighbour)}
       newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState}
       newHash := getHash(&newState)
-      print(newHash)
+      dprint(newHash)
       if(!(*visitedStates)[newHash]){
-        print("INSERTING")
+        dprint("INSERTING")
         frontier.Insert(&newState, heuristic(&newState))
         (*visitedStates)[newHash] = true
         for _, a := range *previous.action {
-          print((*a).toString())
+          dprint((*a).toString())
         }
       } else {
          // TODO: this should check if the new way is better
@@ -186,13 +186,13 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
 
 	// PUSH / PULL
 	for _, box := range previous.boxes {
-    print("BOX");
+    dprint("BOX");
 		if (!isNeigbours(robot.pos, box.pos) || robot.color != box.color) { /* || reserved(box.pos, previous) */
-      printf("NN: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box.pos.x, box.pos.y)
+      dprintf("NN: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box.pos.x, box.pos.y)
 			continue
 		}
 		for _, box_dest := range neighbours(box.pos) {
-      printf("CONSIDERING: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
+      dprintf("CONSIDERING: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
 			if box_dest == robot.pos {
 				// PULL
 				for _, robot_dest := range neighbours(robot.pos) {
@@ -206,11 +206,11 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
               newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
               newHash   := getHash(&newState)
               if(!(*visitedStates)[newHash]){
-                print("INSERTING PULL")
+                dprint("INSERTING PULL")
                 frontier.Insert(&newState, heuristic(&newState))
                 (*visitedStates)[newHash] = true
                 for _, a := range *previous.action {
-                  print((*a).toString())
+                  dprint((*a).toString())
                 }
               } else {
                  // TODO: this should check if the new way is better
@@ -229,11 +229,11 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
           newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
           newHash   := getHash(&newState)
           if(!(*visitedStates)[newHash]){
-            print("INSERTING PUSH")
+            dprint("INSERTING PUSH")
             frontier.Insert(&newState, heuristic(&newState))
             (*visitedStates)[newHash] = true
             for _, a := range *previous.action {
-              print((*a).toString())
+              dprint((*a).toString())
             }
           } else {
              // TODO: this should check if the new way is better
@@ -312,9 +312,7 @@ func isDone(boxes []*Box) int {
   for _, goal := range goals {
     found := false
     for _, box := range boxes {
-      //print("isDone: " + string(goal.letter) + " =? " + string(box.letter))
       if(goal.pos == box.pos && goal.letter == box.letter){
-        //print(" match")
         found = true
         break
       }
@@ -323,7 +321,7 @@ func isDone(boxes []*Box) int {
        res += 1
     }
   }
-  printf("isDone: %d\n", res)
+  dprintf("isDone: %d\n", res)
   return res
 }
 
