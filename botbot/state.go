@@ -21,6 +21,7 @@ type Box struct {
 	// x, y int
 	pos Coordinate
 	color Color
+  letter rune
 }
 
 type Robot struct {

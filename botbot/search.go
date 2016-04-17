@@ -10,11 +10,11 @@ func search() [][]agentAction {
   print("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
-  var initialActions []agentAction
-  var initialAction agentAction
+  var initialA []agentAction
+  //var initialAction agentAction
   //var states []*SimpleState
-  previous := &SimpleState{initialAction, nil, robots, boxes}
-  state    := State{0, make(map[Coordinate]bool), initialActions, robots, boxes, len(goals)}
+  previous := &SimpleState{initialActions(), nil, robots, boxes, initialCaluclated()}
+  state    := State{0, make(map[Coordinate]bool), initialA, robots, boxes, len(goals)}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
   frontier.Insert(previous, 0)
@@ -24,22 +24,30 @@ func search() [][]agentAction {
   for !frontier.IsEmpty() {
     previous = frontier.Extract().(*SimpleState)
     print("checking: " + getHash(previous))
-    if(previous != nil && previous.action != nil){
-      print( "Type " + previous.action.toString())
-    }
     if(isDone(previous.boxes) == 0){
       var result [][]agentAction
       for previous.previous != nil {
-        print(previous.action.toString())
-        newActionList := make([]agentAction, 1)
-        newActionList[0] = previous.action
-        result = append([][]agentAction{newActionList}, result...)
+        result = append([][]agentAction{*previous.action}, result...)
         previous = previous.previous
       }
       print("GOOD PATH")
       return result
     }
-    generate_robot_actions(robots[0], previous, &state, &frontier, &visitedStates)
+    // Generate actions for the first robot that has not been calculated using
+    // the previous actions
+    for i, b := range previous.calculated {
+      if(!b){
+        // If the i'th robot has not had its actions calculated then do it:
+        printf("index = %d (true)\n", i)
+        generate_robot_actions(i, previous.robots[i], previous, &state, &frontier, &visitedStates)
+        break
+      }else if (i == len(previous.calculated)-1) {
+        // If all robots had its actions generated from this state, create a new one.
+        printf("index = 0 (false)\n")
+        generate_robot_actions(0, previous.robots[0], previous, &state, &frontier, &visitedStates)
+        break
+      }
+    }
   }
 
   print("NO PATH")
@@ -47,10 +55,11 @@ func search() [][]agentAction {
 }
 
 type SimpleState struct {
-	action agentAction
+	action *[]agentAction
   previous *SimpleState
 	robots []*Robot
 	boxes []*Box
+  calculated []bool
 }
 
 /* Creates a string from the SimpleState that can be used in a hashmap.
@@ -83,15 +92,57 @@ func all_child_states(state *State) []State {
 }
 
 func heuristic(state *SimpleState) int {
-  printf("h: %d\n", isDone(state.boxes))
   return isDone(state.boxes)
 }
 
-func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, frontier *Heap, visitedStates *map[string]bool) {
+func initialActions() *[]agentAction{
+  res := make([]agentAction, len(robots))
+  for i, _ := range res {
+    res[i] = &noop{}
+  }
+  return &res
+}
+
+func newActionsState(state *SimpleState, i int) *[]agentAction {
+  if(i == 0){
+    return initialActions()
+  }
+  res := make([]agentAction, len(robots))
+  for j, a := range *state.action {
+    res[j] = a
+    print((*a).toString())
+  }
+  return &res
+}
+
+
+func initialCaluclated() []bool {
+  res := make([]bool, len(robots))
+  for j, _ := range res {
+    res[j] = false
+  }
+  return res
+}
+
+func newCalculatedState(state *SimpleState, i int) []bool {
+  var res []bool
+  if(i==0){
+    res = initialCaluclated()
+  } else {
+    res = make([]bool, len(robots))
+    for j, b := range state.calculated {
+        res[j] = b
+    }
+  }
+  res[i] = true
+  return res
+}
+
+func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *State, frontier *Heap, visitedStates *map[string]bool) {
 	// Dont reserve current, it is already marked as occupied
 
   // TODO  REMOvE THIS
-  robot = previous.robots[0]
+  //robot = previous.robots[0]
 
   printf("GENERATING: %d; %d\n", robot.pos.x, robot.pos.y)
 	// NOP
@@ -100,7 +151,14 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
 
 		// *newStates = append(*newStates, state)
 	}
-
+  newCalculatedState := newCalculatedState(previous, i)
+  var newPrevious *SimpleState
+  if(i==0){
+    newPrevious = previous
+  }else{
+    newPrevious = previous.previous
+  }
+  //TODO: NOOP 
 	// MOVE
 	for _, neighbour := range neighbours(robot.pos) {
     printf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
@@ -108,14 +166,18 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
       print("neighbour is free");
 			// Create simple state - Reserve neighbour
       newRobots := newRobotsState(previous, robot, neighbour)
-      newAction := move{direction(robot.pos, neighbour)}
-      newState := SimpleState{&newAction, previous, newRobots, previous.boxes}
+      newActions := newActionsState(previous, i)
+      (*newActions)[i] = &move{direction(robot.pos, neighbour)}
+      newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState}
       newHash := getHash(&newState)
       print(newHash)
       if(!(*visitedStates)[newHash]){
         print("INSERTING")
         frontier.Insert(&newState, heuristic(&newState))
         (*visitedStates)[newHash] = true
+        for _, a := range *previous.action {
+          print((*a).toString())
+        }
       } else {
          // TODO: this should check if the new way is better
       }
@@ -125,7 +187,7 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
 	// PUSH / PULL
 	for _, box := range previous.boxes {
     print("BOX");
-		if !isNeigbours(robot.pos, box.pos) { /* || reserved(box.pos, previous) */
+		if (!isNeigbours(robot.pos, box.pos) || robot.color != box.color) { /* || reserved(box.pos, previous) */
       printf("NN: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box.pos.x, box.pos.y)
 			continue
 		}
@@ -138,14 +200,18 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
 				    // Create simple state - Reserve box + dest
             if(isFree(robot_dest, previous)){
               newRobots := newRobotsState(previous, robot, robot_dest)
-              newAction := pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos)}
+              newAction := newActionsState(previous, i)
+              (*newAction)[i] = &pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos)}
               newBoxes  := newBoxState(previous, box, box_dest)
-              newState  := SimpleState{&newAction, previous, newRobots, newBoxes}
+              newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
               newHash   := getHash(&newState)
               if(!(*visitedStates)[newHash]){
                 print("INSERTING PULL")
                 frontier.Insert(&newState, heuristic(&newState))
                 (*visitedStates)[newHash] = true
+                for _, a := range *previous.action {
+                  print((*a).toString())
+                }
               } else {
                  // TODO: this should check if the new way is better
               }
@@ -157,14 +223,18 @@ func generate_robot_actions(robot *Robot, previous *SimpleState, state *State, f
         if(isFree(box_dest, previous)){
           // Create simple state - Reserve box + dest
           newRobots := newRobotsState(previous, robot, box.pos)
-          newAction := push{direction(robot.pos, box.pos), direction(box.pos, box_dest)}
+          newAction := newActionsState(previous, i)
+          (*newAction)[i] = &push{direction(robot.pos, box.pos), direction(box.pos, box_dest)}
           newBoxes  := newBoxState(previous, box, box_dest)
-          newState  := SimpleState{&newAction, previous, newRobots, newBoxes}
+          newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
           newHash   := getHash(&newState)
           if(!(*visitedStates)[newHash]){
             print("INSERTING PUSH")
             frontier.Insert(&newState, heuristic(&newState))
             (*visitedStates)[newHash] = true
+            for _, a := range *previous.action {
+              print((*a).toString())
+            }
           } else {
              // TODO: this should check if the new way is better
           }
@@ -201,7 +271,7 @@ func newBoxState(state *SimpleState, box *Box, newPos Coordinate) []*Box{
     // If the box is the one that is being moved we create a new box and change the coordinate,
     // otherwise we can keep the old box to save memory.
     if(b.pos == box.pos){
-      newBoxes[i] = &Box{newPos, b.color}
+      newBoxes[i] = &Box{newPos, b.color, b.letter}
     } else {
       newBoxes[i] = b
     }
@@ -242,7 +312,9 @@ func isDone(boxes []*Box) int {
   for _, goal := range goals {
     found := false
     for _, box := range boxes {
-      if(goal.pos == box.pos){
+      //print("isDone: " + string(goal.letter) + " =? " + string(box.letter))
+      if(goal.pos == box.pos && goal.letter == box.letter){
+        //print(" match")
         found = true
         break
       }
@@ -251,6 +323,7 @@ func isDone(boxes []*Box) int {
        res += 1
     }
   }
+  printf("isDone: %d\n", res)
   return res
 }
 

@@ -75,12 +75,12 @@ func NewRobot(c rune, x int, y int) {
 
 func NewGoal(c rune, x int, y int) {
     goalMap[x][y] = true
-    goal := Goal{Coordinate{x, y}, c, -1}
+    goal := Goal{Coordinate{x, y}, unicode.ToUpper(c), -1}
     goals = append(goals, &goal)
 }
 
 func NewBox(c rune, x int, y int) {
     color := object_colors[c]
-    box := Box{Coordinate{x, y}, color}
+    box := Box{Coordinate{x, y}, color, c}
     boxes = append(boxes, &box)
 }
