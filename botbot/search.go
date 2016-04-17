@@ -6,14 +6,14 @@ import (
 
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
-
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
   var initialA []agentAction
   //var initialAction agentAction
   //var states []*SimpleState
-  previous := &SimpleState{initialActions(), nil, robots, boxes, initialCaluclated()}
+  gs, bs := initialGoals()
+  previous := &SimpleState{initialActions(), nil, robots, boxes, initialCaluclated(), 0, gs, bs}
   state    := State{0, make(map[Coordinate]bool), initialA, robots, boxes, len(goals)}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
@@ -23,7 +23,7 @@ func search() [][]agentAction {
 	// A* algorithm
   for !frontier.IsEmpty() {
     previous = frontier.Extract().(*SimpleState)
-    dprint("checking: " + getHash(previous))
+    dprintf("checking: " + getHash(previous) + "out of %d type "+ (*previous.action)[0].toString(), frontier.Size())
     if(isDone(previous.boxes) == 0){
       var result [][]agentAction
       for previous.previous != nil {
@@ -38,12 +38,10 @@ func search() [][]agentAction {
     for i, b := range previous.calculated {
       if(!b){
         // If the i'th robot has not had its actions calculated then do it:
-        dprintf("index = %d (true)\n", i)
         generate_robot_actions(i, previous.robots[i], previous, &state, &frontier, &visitedStates)
         break
       }else if (i == len(previous.calculated)-1) {
         // If all robots had its actions generated from this state, create a new one.
-        dprintf("index = 0 (false)\n")
         generate_robot_actions(0, previous.robots[0], previous, &state, &frontier, &visitedStates)
         break
       }
@@ -60,6 +58,9 @@ type SimpleState struct {
 	robots []*Robot
 	boxes []*Box
   calculated []bool
+  cost int
+  agentToGoal []*Goal // Map from robot index to goal
+  agentToBox []int    // Map from robot index to box used for its goal
 }
 
 /* Creates a string from the SimpleState that can be used in a hashmap.
@@ -91,8 +92,28 @@ func all_child_states(state *State) []State {
 	return nil
 }
 
-func heuristic(state *SimpleState) int {
-  return isDone(state.boxes)
+func initialGoals() ([]*Goal, []int) {
+  goals := make([]*Goal, len(robots))
+  boxes := make([]int, len(robots))
+
+  for i:=0; i<len(robots); i++ {
+    goals[i] = nil
+    boxes[i] = -1
+  }
+  return goals, boxes
+}
+
+func copyGoals(state *SimpleState) {
+  goals := make([]*Goal, len(robots))
+  boxes := make([]int, len(robots))
+
+  for i:=0; i<len(robots); i++ {
+    goals[i] = state.agentToGoal[i]
+    boxes[i] = state.agentToBox[i]
+  }
+
+  state.agentToGoal = goals
+  state.agentToBox = boxes
 }
 
 func initialActions() *[]agentAction{
@@ -141,10 +162,7 @@ func newCalculatedState(state *SimpleState, i int) []bool {
 func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *State, frontier *Heap, visitedStates *map[string]bool) {
 	// Dont reserve current, it is already marked as occupied
 
-  // TODO  REMOvE THIS
-  //robot = previous.robots[0]
-
-  dprintf("GENERATING: %d; %d\n", robot.pos.x, robot.pos.y)
+  dprintf("GENERATING: %d; %d for %d\n", robot.pos.x, robot.pos.y, i)
 	// NOP
 	if !reserved(robot.pos, previous) {
 		// Create simple state - no extra reservations
@@ -152,28 +170,30 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
 		// *newStates = append(*newStates, state)
 	}
   newCalculatedState := newCalculatedState(previous, i)
+  var newCost int
   var newPrevious *SimpleState
   if(i==0){
     newPrevious = previous
+    newCost = previous.cost + 1
   }else{
     newPrevious = previous.previous
+    newCost = previous.cost
   }
   //TODO: NOOP 
 	// MOVE
 	for _, neighbour := range neighbours(robot.pos) {
     dprintf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
     if ( isFree(neighbour, previous) ) {
-      dprint("neighbour is free");
 			// Create simple state - Reserve neighbour
       newRobots := newRobotsState(previous, robot, neighbour)
       newActions := newActionsState(previous, i)
       (*newActions)[i] = &move{direction(robot.pos, neighbour)}
-      newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState}
+      newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
       newHash := getHash(&newState)
       dprint(newHash)
       if(!(*visitedStates)[newHash]){
         dprint("INSERTING")
-        frontier.Insert(&newState, heuristic(&newState))
+        frontier.Insert(&newState, newCost + heuristic(&newState))
         (*visitedStates)[newHash] = true
         for _, a := range *previous.action {
           dprint((*a).toString())
@@ -186,13 +206,10 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
 
 	// PUSH / PULL
 	for _, box := range previous.boxes {
-    dprint("BOX");
 		if (!isNeigbours(robot.pos, box.pos) || robot.color != box.color) { /* || reserved(box.pos, previous) */
-      dprintf("NN: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box.pos.x, box.pos.y)
 			continue
 		}
 		for _, box_dest := range neighbours(box.pos) {
-      dprintf("CONSIDERING: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
 			if box_dest == robot.pos {
 				// PULL
 				for _, robot_dest := range neighbours(robot.pos) {
@@ -203,11 +220,11 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
               newAction := newActionsState(previous, i)
               (*newAction)[i] = &pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos)}
               newBoxes  := newBoxState(previous, box, box_dest)
-              newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
+              newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
               newHash   := getHash(&newState)
               if(!(*visitedStates)[newHash]){
-                dprint("INSERTING PULL")
-                frontier.Insert(&newState, heuristic(&newState))
+                dprintf("pull: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
+                frontier.Insert(&newState, newCost + heuristic(&newState))
                 (*visitedStates)[newHash] = true
                 for _, a := range *previous.action {
                   dprint((*a).toString())
@@ -226,11 +243,11 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
           newAction := newActionsState(previous, i)
           (*newAction)[i] = &push{direction(robot.pos, box.pos), direction(box.pos, box_dest)}
           newBoxes  := newBoxState(previous, box, box_dest)
-          newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState}
+          newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
           newHash   := getHash(&newState)
           if(!(*visitedStates)[newHash]){
-            dprint("INSERTING PUSH")
-            frontier.Insert(&newState, heuristic(&newState))
+            dprintf("push: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
+            frontier.Insert(&newState, newCost + heuristic(&newState))
             (*visitedStates)[newHash] = true
             for _, a := range *previous.action {
               dprint((*a).toString())
@@ -321,7 +338,6 @@ func isDone(boxes []*Box) int {
        res += 1
     }
   }
-  dprintf("isDone: %d\n", res)
   return res
 }
 

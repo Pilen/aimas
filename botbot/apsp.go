@@ -6,7 +6,6 @@ func all_pairs_shortest_path(walls *[70][70]bool) {
     // TODO Fix...
     //width -= 2;
     //height -= 1;
-
     apsp = make([][]*[][]int, width);
 
     for x := 0; x < width; x++ {
@@ -25,7 +24,7 @@ func checked_distance(start, end Coordinate) int {
         if(apsp[start.x][start.y] == nil || apsp[end.x][end.y] == nil){
             return -1;
         }
-
+        dprintf("returning distance %d\n", (*apsp[start.x][start.y])[end.x][end.y])
         return (*apsp[start.x][start.y])[end.x][end.y];
     }
 
@@ -37,38 +36,38 @@ func checked_distance(start, end Coordinate) int {
 /*
  * Find the next coordinate and direction in the shortest path form start to end
 */
-func nextNode(start, end Coordinate) (next Coordinate, dir rune) {
-
-    distX := checked_distance(Coordinate{start.x+1, start.y}, end);
-    distX_ := checked_distance(Coordinate{start.x-1, start.y}, end);
-    distY := checked_distance(Coordinate{start.x, start.y+1}, end);
-    distY_ := checked_distance(Coordinate{start.x, start.y-1}, end);
-
-    next = Coordinate{start.x+1, start.y}
-    minDist := distX
-    dir = 'E'
-
-    if(minDist < 0 || distX_ < minDist && distX_ >= 0){
-        next.x = start.x-1
-        next.y = start.y
-        minDist = distX_
-        dir = 'W'
-    }
-    if(minDist < 0 || distY < minDist && distY >= 0){
-        next.x = start.x
-        next.y = start.y+1
-        minDist = distY
-        dir = 'S'
-    }
-    if(minDist < 0 || distY_ < minDist && distY_ >= 0){
-        next.x = start.x
-        next.y = start.y-1
-        minDist = distY_
-        dir = 'N'
-    }
-
-    return next, dir
-}
+//func nextNode(start, end Coordinate) (next Coordinate, dir rune) {
+//
+//    distX := checked_distance(Coordinate{start.x+1, start.y}, end);
+//    distX_ := checked_distance(Coordinate{start.x-1, start.y}, end);
+//    distY := checked_distance(Coordinate{start.x, start.y+1}, end);
+//    distY_ := checked_distance(Coordinate{start.x, start.y-1}, end);
+//
+//    next = Coordinate{start.x+1, start.y}
+//    minDist := distX
+//    dir = 'E'
+//
+//    if(minDist < 0 || distX_ < minDist && distX_ >= 0){
+//        next.x = start.x-1
+//        next.y = start.y
+//        minDist = distX_
+//        dir = 'W'
+//    }
+//    if(minDist < 0 || distY < minDist && distY >= 0){
+//        next.x = start.x
+//        next.y = start.y+1
+//        minDist = distY
+//        dir = 'S'
+//    }
+//    if(minDist < 0 || distY_ < minDist && distY_ >= 0){
+//        next.x = start.x
+//        next.y = start.y-1
+//        minDist = distY_
+//        dir = 'N'
+//    }
+//
+//    return next, dir
+//}
 
 /*
  * Return an array where each cell contains the length of the shortest path to (coord)

@@ -9,7 +9,7 @@ import (
 
 var wg sync.WaitGroup
 func main() {
-    //debugPrint = true
+    debugPrint = true
     section("Start")
     setupState()
     Parse()
@@ -20,6 +20,7 @@ func main() {
     all_pairs_shortest_path(&wallMap)
     printf("APSP work: %v", apspWork)
 
+    printf("sp: %d", checked_distance(Coordinate{1,1}, Coordinate{2,1}))
     section("Work")
     //printAPSP(apsp);
     // path := moveToPlan(apsp, 8, 1, &moveTo{10, 3})
