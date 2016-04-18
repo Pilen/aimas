@@ -1,39 +1,52 @@
 package main
 
 func heuristic(state *SimpleState) int {
+  // TODO: make sure that each agent does not have the same goal
+
+
+  // totalDistance is the sum of distances from each agent to its goal
+  //////////////////////////////////////////////////////////////////////////////
   totalDistance := 0
   for i, r := range state.robots {
     totalDistance += heuristicForAgent(i, r, state, true)
+    dprintf("H = %d", totalDistance)
   }
-  return totalDistance
+
+  // goalCount is the number of goal that does not have a box
+  // This makes it more expensive to move boxes that are already on a box
+  //////////////////////////////////////////////////////////////////////////////
+  goalCount := isDone(state.boxes)
+  return totalDistance + goalCount*50
 }
 
 func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   if(state.agentToGoal[i] != nil){
     dprintf("AGENT HEURISTIC: %d mission: %d (%d, %d)",i, state.agentToBox[i], state.agentToGoal[i].pos.x, state.agentToGoal[i].pos.y)
+    dprint("Action: " + (*state.action)[0].toString())
   }
   if(state.agentToBox[i] >= 0 ){
-    dprintf("has goal")
     var dist int
     dist = checked_distance(r.pos, state.boxes[state.agentToBox[i]].pos)
-    dprintf("dist 0 %d\n", dist)
+    //dprintf("dist 0 %d\n", dist)
     if(dist > 1) {
       // If we need to move to the box:
+      dprint("to box")
       return dist
     }
-    if (state.agentToGoal[i] == nil) {
+    if (state.agentToGoal[i] != nil) {
       // if we are already able to push the box:
       dist = checked_distance(state.boxes[state.agentToBox[i]].pos, state.agentToGoal[i].pos)
-      dprintf("dist 1 %d\n", dist)
+      //dprintf("dist 1 %d\n", dist)
 
       // if we are at the target, make sure to get a new goal next iteration
       if(dist == 0){
         state.agentToBox[i] = -1
       }
+      dprint("to goal")
       return dist
     }
   } else if again {
-    dprint("Next goal")
+    //dprint("Next goal")
     //Calculate new goal
     newGoal, newBox := nextGoal(state, r)
     state.agentToGoal[i] = newGoal
@@ -60,7 +73,7 @@ func nextGoal(state *SimpleState, robot *Robot) (*Goal, int) {
     for i, b := range state.boxes {
       // Check if goal, robot and box are all compatible
       if(b.color != robot.color || b.letter != g.letter){
-        dprintf("INCOMPATIBLE GOAL")
+        //dprintf("INCOMPATIBLE GOAL")
         continue
       }
 
@@ -68,7 +81,7 @@ func nextGoal(state *SimpleState, robot *Robot) (*Goal, int) {
       newDistB := checked_distance(b.pos, g.pos)
       // Check if either is unreachable
       if(newDistA < 0 || newDistB < 0){
-        dprintf("UNREACHABLE GOAL")
+        //dprintf("UNREACHABLE GOAL")
         continue
       }
 
@@ -76,9 +89,9 @@ func nextGoal(state *SimpleState, robot *Robot) (*Goal, int) {
         nextGoal = g
         nextBox = i
         distance = newDistA + newDistB
-        dprintf("NEW BEST GOAL")
+        //dprintf("NEW BEST GOAL")
       } else {
-        dprintf("WORSE GOAL")
+        //dprintf("WORSE GOAL")
       }
     }
   }

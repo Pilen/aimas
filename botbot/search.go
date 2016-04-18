@@ -182,7 +182,7 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
   //TODO: NOOP 
 	// MOVE
 	for _, neighbour := range neighbours(robot.pos) {
-    dprintf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
+    //dprintf("NEIGHBOUR: %d; %d\n", neighbour.x, neighbour.y)
     if ( isFree(neighbour, previous) ) {
 			// Create simple state - Reserve neighbour
       newRobots := newRobotsState(previous, robot, neighbour)
@@ -190,14 +190,14 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
       (*newActions)[i] = &move{direction(robot.pos, neighbour)}
       newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
       newHash := getHash(&newState)
-      dprint(newHash)
+      //dprint(newHash)
       if(!(*visitedStates)[newHash]){
-        dprint("INSERTING")
+        //dprint("INSERTING")
         frontier.Insert(&newState, newCost + heuristic(&newState))
         (*visitedStates)[newHash] = true
-        for _, a := range *previous.action {
-          dprint((*a).toString())
-        }
+        //for _, a := range *previous.action {
+        //  dprint((*a).toString())
+        //}
       } else {
          // TODO: this should check if the new way is better
       }
@@ -223,12 +223,12 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
               newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
               newHash   := getHash(&newState)
               if(!(*visitedStates)[newHash]){
-                dprintf("pull: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
+                //dprintf("pull: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
                 frontier.Insert(&newState, newCost + heuristic(&newState))
                 (*visitedStates)[newHash] = true
-                for _, a := range *previous.action {
-                  dprint((*a).toString())
-                }
+                //for _, a := range *previous.action {
+                //  dprint((*a).toString())
+                //}
               } else {
                  // TODO: this should check if the new way is better
               }
@@ -246,12 +246,12 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
           newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
           newHash   := getHash(&newState)
           if(!(*visitedStates)[newHash]){
-            dprintf("push: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
+            //dprintf("push: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
             frontier.Insert(&newState, newCost + heuristic(&newState))
             (*visitedStates)[newHash] = true
-            for _, a := range *previous.action {
-              dprint((*a).toString())
-            }
+            //for _, a := range *previous.action {
+            //  dprint((*a).toString())
+            //}
           } else {
              // TODO: this should check if the new way is better
           }

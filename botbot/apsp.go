@@ -24,7 +24,7 @@ func checked_distance(start, end Coordinate) int {
         if(apsp[start.x][start.y] == nil || apsp[end.x][end.y] == nil){
             return -1;
         }
-        dprintf("returning distance %d\n", (*apsp[start.x][start.y])[end.x][end.y])
+        //dprintf("returning distance %d\n", (*apsp[start.x][start.y])[end.x][end.y])
         return (*apsp[start.x][start.y])[end.x][end.y];
     }
 
