@@ -12,8 +12,8 @@ func search() [][]agentAction {
   var initialA []agentAction
   //var initialAction agentAction
   //var states []*SimpleState
-  gs, bs := initialGoals()
-  previous := &SimpleState{initialActions(), nil, robots, boxes, initialCaluclated(), 0, gs, bs}
+  //gs, bs := initialGoals()
+  previous := &SimpleState{initialActions(), nil, robots, boxes, initialCaluclated(), 0, getInitialGoals(boxes), make([]*agentGoal, len(robots))}
   state    := State{0, make(map[Coordinate]bool), initialA, robots, boxes, len(goals)}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
@@ -59,8 +59,10 @@ type SimpleState struct {
 	boxes []*Box
   calculated []bool
   cost int
-  agentToGoal []*Goal // Map from robot index to goal
-  agentToBox []int    // Map from robot index to box used for its goal
+  goals []agentGoal
+  activeGoals []*agentGoal
+  //agentToGoal []*Goal // Map from robot index to goal
+  //agentToBox []int    // Map from robot index to box used for its goal
 }
 
 /* Creates a string from the SimpleState that can be used in a hashmap.
@@ -92,28 +94,31 @@ func all_child_states(state *State) []State {
 	return nil
 }
 
-func initialGoals() ([]*Goal, []int) {
-  goals := make([]*Goal, len(robots))
-  boxes := make([]int, len(robots))
-
-  for i:=0; i<len(robots); i++ {
-    goals[i] = nil
-    boxes[i] = -1
-  }
-  return goals, boxes
-}
+//func initialGoals() ([]*Goal, []int) {
+//  goals := make([]*Goal, len(robots))
+//  boxes := make([]int, len(robots))
+//
+//  for i:=0; i<len(robots); i++ {
+//    goals[i] = nil
+//    boxes[i] = -1
+//  }
+//  return goals, boxes
+//}
 
 func copyGoals(state *SimpleState) {
-  goals := make([]*Goal, len(robots))
-  boxes := make([]int, len(robots))
+  newGoals := make([]agentGoal, len(state.goals))
+  newActiveGoals := make([]*agentGoal, len(state.activeGoals))
 
-  for i:=0; i<len(robots); i++ {
-    goals[i] = state.agentToGoal[i]
-    boxes[i] = state.agentToBox[i]
+  for i:=0; i<len(newGoals); i++ {
+    newGoals[i] = state.goals[i]
   }
 
-  state.agentToGoal = goals
-  state.agentToBox = boxes
+  for i:=0; i<len(newActiveGoals); i++ {
+    newActiveGoals[i] = state.activeGoals[i]
+  }
+
+  state.goals = newGoals
+  state.activeGoals = newActiveGoals
 }
 
 func initialActions() *[]agentAction{
@@ -188,7 +193,7 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
       newRobots := newRobotsState(previous, robot, neighbour)
       newActions := newActionsState(previous, i)
       (*newActions)[i] = &move{direction(robot.pos, neighbour)}
-      newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
+      newState := SimpleState{newActions, newPrevious, newRobots, previous.boxes, newCalculatedState, newCost, previous.goals, previous.activeGoals}
       newHash := getHash(&newState)
       //dprint(newHash)
       if(!(*visitedStates)[newHash]){
@@ -220,7 +225,7 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
               newAction := newActionsState(previous, i)
               (*newAction)[i] = &pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos)}
               newBoxes  := newBoxState(previous, box, box_dest)
-              newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
+              newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.goals, previous.activeGoals}
               newHash   := getHash(&newState)
               if(!(*visitedStates)[newHash]){
                 //dprintf("pull: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
@@ -243,7 +248,7 @@ func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *S
           newAction := newActionsState(previous, i)
           (*newAction)[i] = &push{direction(robot.pos, box.pos), direction(box.pos, box_dest)}
           newBoxes  := newBoxState(previous, box, box_dest)
-          newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.agentToGoal, previous.agentToBox}
+          newState  := SimpleState{newAction, newPrevious, newRobots, newBoxes, newCalculatedState, newCost, previous.goals, previous.activeGoals}
           newHash   := getHash(&newState)
           if(!(*visitedStates)[newHash]){
             //dprintf("push: %d; %d -> %d; %d\n", robot.pos.x, robot.pos.y, box_dest.x, box_dest.y)
