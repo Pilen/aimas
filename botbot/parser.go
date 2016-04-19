@@ -19,7 +19,7 @@ func Parse() {
     for err == nil {
         line, err = reader.ReadString('\n')
 
-        line = strings.TrimSpace(line)
+        line = strings.TrimRightFunc(line, unicode.IsSpace)
         //So apparently files with CRLF lineendings are interpreted as LFLF in go?!
         if (line == "") {
             continue
@@ -41,8 +41,8 @@ func Parse() {
     var level [70][70]rune // x, y
     y := 0
     for ;err == nil; line, err = reader.ReadString('\n') {
-        line = strings.TrimSpace(line)
-        if (line == "") {
+        line = strings.TrimRightFunc(line, unicode.IsSpace)
+        if (strings.TrimSpace(line) == "") {
             break
         }
         print(line)
