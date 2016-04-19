@@ -3,7 +3,9 @@ package main
 
 
 func heuristic(state *SimpleState) int {
-  // TODO: make sure that each agent does not have the same goal
+  // TODO: add goals when they are violated
+  // TODO: When a goal is reached the next goal is picked the heuristic 
+  //       grows a lot, and the solutions that only almost solves the task is picked.
 
 
   // totalDistance is the sum of distances from each agent to its goal
@@ -14,11 +16,20 @@ func heuristic(state *SimpleState) int {
     dprintf("H = %d", totalDistance)
   }
 
+  // goalDistance is the distance of all goals remaining:
+  //////////////////////////////////////////////////////////////////////////////
+  goalDistance := 0 
+  for _, g := range state.goals {
+    box := state.boxes[g.boxIdx]
+    goal := goals[g.goalIdx]
+    goalDistance += checked_distance(box.pos, goal.pos)
+  }
+
   // goalCount is the number of goal that does not have a box
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
   goalCount := isDone(state.boxes)
-  return totalDistance + goalCount*50
+  return totalDistance + goalDistance + goalCount*100
 }
 
 func newGoal(robotIdx int, state *SimpleState) {
@@ -91,14 +102,18 @@ func getInitialGoals(boxes []*Box) []agentGoal{
       if(newDist < 0 || b.letter != g.letter || reserved[j]){
         continue
       }
-
       if(distance > newDist){
-        box = i
+        box = j
         distance = newDist
       }
     }
     agentGoals = append(agentGoals, agentGoal{box, i})
     reserved[box] = true
+  }
+
+  dprint("GOALS:")
+  for _, g := range agentGoals {
+    dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[g.boxIdx].letter, boxes[g.boxIdx].pos.x, boxes[g.boxIdx].pos.y, goals[g.goalIdx].letter, goals[g.goalIdx].pos.x, goals[g.goalIdx].pos.y)
   }
 
   return agentGoals

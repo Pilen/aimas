@@ -61,8 +61,6 @@ type SimpleState struct {
   cost int
   goals []agentGoal
   activeGoals []*agentGoal
-  //agentToGoal []*Goal // Map from robot index to goal
-  //agentToBox []int    // Map from robot index to box used for its goal
 }
 
 /* Creates a string from the SimpleState that can be used in a hashmap.
@@ -81,29 +79,15 @@ func getHash(state *SimpleState) string {
 
 func all_child_states(state *State) []State {
 	var current []*SimpleState
-	// var previous = []*SimpleState{&SimpleState{[], []}}
 	for _, robot := range state.robots {
 		current = make([]*SimpleState, 0)
 
 		_ = current
 		_ = robot
 
-
-		// previous = current
 	}
 	return nil
 }
-
-//func initialGoals() ([]*Goal, []int) {
-//  goals := make([]*Goal, len(robots))
-//  boxes := make([]int, len(robots))
-//
-//  for i:=0; i<len(robots); i++ {
-//    goals[i] = nil
-//    boxes[i] = -1
-//  }
-//  return goals, boxes
-//}
 
 func copyGoals(state *SimpleState) {
   newGoals := make([]agentGoal, len(state.goals))
@@ -167,7 +151,10 @@ func newCalculatedState(state *SimpleState, i int) []bool {
 func generate_robot_actions(i int, robot *Robot, previous *SimpleState, state *State, frontier *Heap, visitedStates *map[string]bool) {
 	// Dont reserve current, it is already marked as occupied
 
-  dprintf("GENERATING: %d; %d for %d\n", robot.pos.x, robot.pos.y, i)
+  dprintf("GENERATING: %d; %d for %d", robot.pos.x, robot.pos.y, i)
+  if(previous.activeGoals[i] != nil){
+    dprintf("GOAL: %v (%d,%d) -> (%d,%d)",previous.boxes[previous.activeGoals[i].boxIdx].letter, previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
+  }
 	// NOP
 	if !reserved(robot.pos, previous) {
 		// Create simple state - no extra reservations
