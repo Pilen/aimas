@@ -39,6 +39,8 @@ type Goal struct {
 }
 
 type State struct {
+	depth int
+	parent *State
 	relevance int
 	reservations map[Coordinate]bool
 	actions []agentAction
