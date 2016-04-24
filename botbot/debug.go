@@ -9,9 +9,24 @@ import (
     "golang.org/x/net/websocket"
 )
 
+var debugPrint bool
+
 func d(v interface{}) {
     logCh <- fmt.Sprintf("%#v %T\n", v, v)
 }
+
+func dprint(values ...interface{}) {
+  if (debugPrint) {
+    logCh <- fmt.Sprintln(values...)
+  }
+}
+
+func dprintf(format string, values ...interface{}) {
+  if (debugPrint) {
+    logCh <- fmt.Sprintf(format + "\n", values...)
+  }
+}
+
 func print(values ...interface{}) {
     logCh <- fmt.Sprintln(values...)
 }
