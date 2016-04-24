@@ -1,7 +1,5 @@
 package main
 
-
-
 func heuristic(state *SimpleState) int {
   // TODO: add goals when they are violated
   // TODO: When a goal is reached the next goal is picked the heuristic 

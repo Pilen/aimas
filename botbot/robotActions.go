@@ -17,6 +17,7 @@ func (p *move) toString() string{
 type push struct {
   agentDirection rune
   boxDirection rune
+  boxIdx int
 }
 
 func (p *push) toString() string{
@@ -26,6 +27,7 @@ func (p *push) toString() string{
 type pull struct {
   agentDirection rune
   boxDirection rune
+  boxIdx int
 }
 
 func (p *pull) toString() string{

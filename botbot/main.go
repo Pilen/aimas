@@ -9,7 +9,7 @@ import (
 
 var wg sync.WaitGroup
 func main() {
-    //debugPrint = true
+    debugPrint = true
     section("Start")
     setupState()
     Parse()
@@ -55,7 +55,7 @@ func hardcodedSolution1() [][]agentAction {
     actions[3][0] = &move{'E'}
     actions[4][0] = &move{'E'}
     actions[5][0] = &move{'E'}
-    actions[5][0] = &push{'E', 'E'}
+    actions[5][0] = &push{'E', 'E', 0}
 
     return actions
 }
@@ -76,8 +76,8 @@ func hardcodedSolution2() [][]agentAction {
         actions[i][1] = &move{'E'}
     }
     actions[16] = make([]agentAction, 2)
-    actions[16][0] = &push{'E', 'E'}
-    actions[16][1] = &push{'E', 'E'}
+    actions[16][0] = &push{'E', 'E', 0}
+    actions[16][1] = &push{'E', 'E', 0}
 
     return actions
 }

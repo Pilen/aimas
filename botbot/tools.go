@@ -25,6 +25,21 @@ func neighbours(coordinate Coordinate) ([]Coordinate) {
 	return coordinates
 }
 
+func applyDirection(coordinate Coordinate, direction rune) Coordinate {
+  switch direction {
+    case 'N':
+      return Coordinate{coordinate.x, coordinate.y-1}
+    case 'S':
+      return Coordinate{coordinate.x, coordinate.y+1}
+    case 'E':
+      return Coordinate{coordinate.x+1, coordinate.y}
+    case 'W':
+      return Coordinate{coordinate.x-1, coordinate.y}
+  }
+
+  return coordinate
+}
+
 func isNeigbours(a, b Coordinate) bool{
   if(a.x == b.x && a.y == b.y+1){
     return true
@@ -57,4 +72,11 @@ func direction(from Coordinate, to Coordinate) rune {
 		return 'W'
 	}
 	panic("ASSERTION FAILED: from == to")
+}
+
+func min(x, y int) int {
+  if x < y {
+    return x
+  }
+  return y
 }
