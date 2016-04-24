@@ -33,6 +33,8 @@ func all_child_states(state *State) []State {
 
 		// previous = current
 	}
+
+	// Convert SimpleStates to States
 	return nil
 }
 
