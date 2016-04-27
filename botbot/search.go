@@ -37,11 +37,9 @@ func search() [][]agentAction {
       dprint("HAD ACTIONS")
     }
 
-    previous.actionCombinations = generateCombinations(previous)
+    actionCombinations := generateCombinations(previous)
 
-    //TODO:
-    for _, actions := range previous.actionCombinations {
-      dprint("has action")
+    for _, actions := range actionCombinations {
       newState := joinActions(actions, previous)     
       newHash := getHash(newState)
       dprintf(newHash)
@@ -52,7 +50,6 @@ func search() [][]agentAction {
       }
     }
 
-    // TODO: insert only if there are more actions left
     // TODO: Dont recalculate heuristic
     if(previous.combinationLevel >= 0){
       frontier.Insert(previous, previous.cost + heuristic(previous))
@@ -81,7 +78,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
           }
         case *push:
           dprint("PUSH")
-          newRPos := applyDirection(state.robots[i].pos, a.agentDirection)
+          newRPos := state.boxes[a.boxIdx].pos
           newBPos := applyDirection(state.boxes[a.boxIdx].pos, a.boxDirection)
           if(isFree(newBPos, newState)){
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
@@ -93,7 +90,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
         case *pull:
           dprint("PULL")
           newRPos := applyDirection(state.robots[i].pos, a.agentDirection)
-          newBPos := applyDirection(state.boxes[a.boxIdx].pos, a.boxDirection)
+          newBPos := state.robots[i].pos;
           if(isFree(newRPos, newState)){
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
@@ -114,7 +111,7 @@ func generateCombinations(state *SimpleState) [][]agentAction {
   if state.combinationLevel < 0 {
     return make([][]agentAction, 0)
   }
-  //TODO: finish! this is only mockup
+
   state.combinationLevel++ // Increment before, since it starts at 0
   // [robotIdx][iAction] contains robot actions which must be combined
   // iAction is min(state.combinations, heapsize for robotIdx)
@@ -123,7 +120,7 @@ func generateCombinations(state *SimpleState) [][]agentAction {
   for i:=0; i<len(state.robots); i++ {
     size := min(state.combinationLevel, state.actionHeap[i].size)
     dprintf("Inserting %d, %d, %d", size, state.combinationLevel, state.actionHeap[i].size)
-    combis[i] = make([]agentAction, size)
+    combisLine := make([]agentAction, 0)
     if state.actionHeap[i].size > state.combinationLevel {
       empty = false
     }
@@ -134,49 +131,37 @@ func generateCombinations(state *SimpleState) [][]agentAction {
       switch a := (ac).(type) {
         case move:
           dprint(a.toString())
-          combis[i][j] = &a // how can I put a pointer in a nonpointer array?
+          combisLine = append(combisLine, &a) // how can I put a pointer in a nonpointer array?
         case push:
           dprint(a.toString())
-          combis[i][j] = &a
+          combisLine= append(combisLine, &a)
         case pull:
           dprint(a.toString())
-          combis[i][j] = &a
+          combisLine = append(combisLine, &a)
         default:
           dprint("invalid!!!")
       }
     }
+    combis[i] = combisLine
   }
 
   if empty {
     state.combinationLevel = -1
   }
 
-  for i:=0; i<len(state.robots); i++ {
-    size := min(state.combinationLevel, state.actionHeap[i].size)
-    for j:=0; j<size; j++ {
-      dprint("combi " + (*combis[i][j]).toString()) // Why am I dereferencing a non-pointer
-    }
-  }
-
   res := make([][]agentAction, 0)
   res2 := make([][]agentAction, 0)
   for r, actions := range combis {
     for _, action := range actions {
-      dprint("new:" + action.toString())
       // For each of the previous results, copy the results and insert all new actions
       if r == 0 {
-        dprint("action " + action.toString())
-        robotRes := make([]agentAction, len(actions))
+        robotRes := make([]agentAction, len(combis))
         robotRes[0] = action
-        dprint("res action " + robotRes[0].toString())
         res = append(res, robotRes)
-        for _, ra := range res {
-          dprint(" got " + ra[0].toString())
-        }
       } else {
         dprint("IN ELSE:")
         for _, actionsRes := range res {
-          robotRes := make([]agentAction, len(actions))
+          robotRes := make([]agentAction, len(combis))
           for i, actionRes := range actionsRes {
             robotRes[i] = actionRes
           }
@@ -186,18 +171,6 @@ func generateCombinations(state *SimpleState) [][]agentAction {
         res = res2
       }
     }
-  }
-
-  dprint("actions------------")
-  for _, actions := range res2 {
-    for _, action := range actions {
-      if(action == nil){
-        dprint("null agent")
-        return make([][]agentAction, 0)
-      }
-      dprint(action.toString())
-    }
-    dprint("---")
   }
   return res
 }
@@ -220,7 +193,6 @@ type SimpleState struct {
  * measure the heurisic of the state.
 */
 func nextState(state *SimpleState) *SimpleState {
-  //TODO: does this work?
   newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals}
 
   for i, robot := range state.robots {
@@ -230,14 +202,6 @@ func nextState(state *SimpleState) *SimpleState {
   for i, box := range state.boxes {
     newState.boxes[i] = box
   }
-  //TODO: should the goals be copied?
-//  for i, goal := range state.goals {
-//    newState.goals[i] = goal
-//  }
-//
-//  for i, goal := range state.activeGoals {
-//    newState.activeGoals[i] = goal
-//  }
 
   return &newState
 }
@@ -299,41 +263,6 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 	}
   return actions
 }
-
-/*
- * Returns a new []*Robot where each *Robot is the same as in state.robots
- * Except for the one that is being moved, which is a new *Robot with updated
- * coordinate
-*/
-//func newRobotsState(state *SimpleState, robot *Robot, newPos Coordinate) []*Robot {
-//  newRobots := make([]*Robot, len(state.robots))
-//  // Copy robots for new state:
-//  for i, r := range state.robots {
-//    // If the robot is the one that is being moved we create a new robot and change the coordinate,
-//    // otherwise we can keep the old robot to save memory.
-//    if(r.pos == robot.pos){
-//      newRobots[i] = &Robot{newPos, r.color, nil}
-//    } else {
-//      newRobots[i] = r
-//    }
-//  }
-//  return newRobots
-//}
-//
-//func newBoxState(state *SimpleState, box *Box, newPos Coordinate) []*Box{
-//  newBoxes := make([]*Box, len(state.boxes))
-//  // Copy boxes for new state:
-//  for i, b := range state.boxes {
-//    // If the box is the one that is being moved we create a new box and change the coordinate,
-//    // otherwise we can keep the old box to save memory.
-//    if(b.pos == box.pos){
-//      newBoxes[i] = &Box{newPos, b.color, b.letter}
-//    } else {
-//      newBoxes[i] = b
-//    }
-//  }
-//  return newBoxes
-//}
 
 func isFree(coordinate Coordinate, state *SimpleState) bool {
   //printf("isFree(%d, %d) ?: " + getHash(state), coordinate.x, coordinate.y)
@@ -426,37 +355,3 @@ func initialActions() *[]agentAction{
   }
   return &res
 }
-
-//func newActionsState(state *SimpleState, i int) *[]agentAction {
-//  if(i == 0){
-//    return initialActions()
-//  }
-//  res := make([]agentAction, len(robots))
-//  for j, a := range *state.action {
-//    res[j] = a
-//    dprint((*a).toString())
-//  }
-//  return &res
-//}
-
-//func initialCaluclated() []bool {
-//  res := make([]bool, len(robots))
-//  for j, _ := range res {
-//    res[j] = false
-//  }
-//  return res
-//}
-
-//func newCalculatedState(state *SimpleState, i int) []bool {
-//  var res []bool
-//  if(i==0){
-//    res = initialCaluclated()
-//  } else {
-//    res = make([]bool, len(robots))
-//    for j, b := range state.calculated {
-//        res[j] = b
-//    }
-//  }
-//  res[i] = true
-//  return res
-//}

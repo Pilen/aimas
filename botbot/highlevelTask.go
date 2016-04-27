@@ -61,6 +61,7 @@ func newGoal(robotIdx int, state *SimpleState) {
 
   if(idx < 0){
     // TODO: handle
+    dprint("no goal found");
     return
   }
 
@@ -70,6 +71,9 @@ func newGoal(robotIdx int, state *SimpleState) {
 
 func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   if(state.activeGoals[i] == nil || state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos) {
+    if(state.activeGoals[i] == nil){
+      dprint("Goal is nil!!");
+    }
     newGoal(i, state)
   }
 
