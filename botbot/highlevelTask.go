@@ -1,17 +1,14 @@
 package main
 
 func heuristic(state *SimpleState) int {
-  // TODO: add goals when they are violated
   // TODO: When a goal is reached the next goal is picked the heuristic 
   //       grows a lot, and the solutions that only almost solves the task is picked.
-
 
   // totalDistance is the sum of distances from each agent to its goal
   //////////////////////////////////////////////////////////////////////////////
   totalDistance := 0
   for i, r := range state.robots {
     totalDistance += heuristicForAgent(i, r, state, true)
-    dprintf("H = %d", totalDistance)
   }
 
   // goalDistance is the distance of all goals remaining:
@@ -26,8 +23,14 @@ func heuristic(state *SimpleState) int {
   // goalCount is the number of goal that does not have a box
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
-  goalCount := isDone(state.boxes)
-  return totalDistance + goalDistance + goalCount*100
+  goalCount := isDone(state.boxes) * 100
+  totalDistance = totalDistance    * 2
+  goalDistance = goalDistance      * 1
+
+  result := totalDistance + goalDistance + goalCount
+
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d", result, totalDistance, goalDistance, goalCount)
+  return result
 }
 
 func newGoal(robotIdx int, state *SimpleState) {
@@ -70,7 +73,7 @@ func newGoal(robotIdx int, state *SimpleState) {
 }
 
 func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
-  if(state.activeGoals[i] == nil || state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos) {
+  if(state.activeGoals[i] == nil) {
     if(state.activeGoals[i] == nil){
       dprint("Goal is nil!!");
     }
@@ -87,6 +90,10 @@ func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
 
   distA := checked_distance(robot.pos, box.pos)
   distB := checked_distance(box.pos, goal.pos)
+
+  if state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos {
+    state.activeGoals[i] = nil
+  }
   return distA + distB
 }
 

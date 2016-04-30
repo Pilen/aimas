@@ -4,6 +4,19 @@ import (
   "strconv"
 )
 
+type SimpleState struct {
+  actualActions *[]agentAction
+  actionCombinations [][]agentAction // TODO: this should be done directly and stored in frontier. Dont save here.
+  combinationLevel int
+  actionHeap []Heap
+  previous *SimpleState
+  robots []*Robot
+  boxes []*Box
+  cost int
+  goals []agentGoal
+  activeGoals []*agentGoal
+}
+
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
   dprint("SEARCHING")
@@ -17,8 +30,13 @@ func search() [][]agentAction {
 
 	// A* algorithm
   for !frontier.IsEmpty() {
+    dprintf("min key: %d", frontier.minKey())
     previous = frontier.Extract().(*SimpleState)
-    dprintf("checking: " + getHash(previous) + "out of %d type "+ (*previous.actualActions)[0].toString(), frontier.Size())
+    aStrings := ""
+    for _, a := range (*previous.actualActions) {
+      aStrings += a.toString()
+    }
+    dprintf("checking: " + getHash(previous) + "out of %d type "+ aStrings + " cost: %d ", frontier.Size(), previous.cost)
     if(isDone(previous.boxes) == 0){
       var result [][]agentAction
       for previous.previous != nil {
@@ -37,7 +55,9 @@ func search() [][]agentAction {
       dprint("HAD ACTIONS")
     }
 
+    dprint("in :Combinatins")
     actionCombinations := generateCombinations(previous)
+    dprint("out :Combinatins")
 
     for _, actions := range actionCombinations {
       newState := joinActions(actions, previous)     
@@ -45,14 +65,15 @@ func search() [][]agentAction {
       dprintf(newHash)
       if(!visitedStates[newHash]){
         dprint("inserting")
-        frontier.Insert(newState, newState.cost + heuristic(newState))
+        frontier.Insert(newState, 2 * newState.cost + heuristic(newState))
         (*visitedStates)[newHash] = true
       }
     }
 
     // TODO: Dont recalculate heuristic
     if(previous.combinationLevel >= 0){
-      frontier.Insert(previous, previous.cost + heuristic(previous))
+      //TODO: insert with the average or minimum minKey of all the action heaps as heuristic
+      frontier.Insert(previous, 2 * previous.cost + 1 + medianKey(previous.actionHeap))
     }
   }
 
@@ -60,10 +81,25 @@ func search() [][]agentAction {
   return make([][]agentAction, 0)
 }
 
+func medianKey(heaps []Heap) int {
+  total := 0
+
+  for _, h := range heaps {
+    if(!h.IsEmpty()){
+      total += h.minKey()
+    }
+  }
+
+  return total / len(heaps)
+}
+
 // Must have one action for each agent
 func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
   newState := nextState(state)
   for i, action := range actions {
+      if(action == nil) { // TODO: remove
+        continue
+      }
       dprint(action.toString())
       var ac interface{} = action
       switch a := (ac).(type) {
@@ -81,6 +117,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
           newRPos := state.boxes[a.boxIdx].pos
           newBPos := applyDirection(state.boxes[a.boxIdx].pos, a.boxDirection)
           if(isFree(newBPos, newState)){
+            checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
           } else {
@@ -92,6 +129,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
           newRPos := applyDirection(state.robots[i].pos, a.agentDirection)
           newBPos := state.robots[i].pos;
           if(isFree(newRPos, newState)){
+            checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
           } else {
@@ -102,6 +140,20 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
   }
   newState.actualActions = &actions
   return newState
+}
+
+/*
+ * Add a new goal to the state if boxIdx is moved away from a goal
+*/
+func checkAddGoal(state *SimpleState, boxIdx int){
+  for goalIdx, g := range goals {
+    if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
+      // add goal to put the box back:
+      state.goals = append(state.goals, agentGoal{boxIdx, goalIdx})
+      dprint("ADDED GOAL!!")
+      return
+    }
+  }
 }
 
 func generateCombinations(state *SimpleState) [][]agentAction {
@@ -125,6 +177,7 @@ func generateCombinations(state *SimpleState) [][]agentAction {
       empty = false
     }
     for j:=0; j<size; j++ {
+      dprintf("adding something %d, %d", i, j)
       // fucking retarded crap typesystem in GO
       // How about GO to hell
       var ac interface{} = state.actionHeap[i].Extract()
@@ -150,16 +203,18 @@ func generateCombinations(state *SimpleState) [][]agentAction {
   }
 
   res := make([][]agentAction, 0)
-  res2 := make([][]agentAction, 0)
-  for r, actions := range combis {
+  for r, actions := range combis { // one pr robot
     for _, action := range actions {
       // For each of the previous results, copy the results and insert all new actions
       if r == 0 {
         robotRes := make([]agentAction, len(combis))
         robotRes[0] = action
         res = append(res, robotRes)
+        dprintf("res leng :%d", len(res))
       } else {
         dprint("IN ELSE:")
+        dprintf("res leng :%d", len(res))
+        res2 := make([][]agentAction, 0)
         for _, actionsRes := range res {
           robotRes := make([]agentAction, len(combis))
           for i, actionRes := range actionsRes {
@@ -172,20 +227,15 @@ func generateCombinations(state *SimpleState) [][]agentAction {
       }
     }
   }
+  for r, a := range res {
+    for _, b := range a {
+      dprintf("nil ?")
+      if( b != nil){ //TODO: remove
+        dprintf("%d not nil: " + b.toString(), r);
+      }
+    }
+  }
   return res
-}
-
-type SimpleState struct {
-	actualActions *[]agentAction
-  actionCombinations [][]agentAction // TODO: this should be done directly and stored in frontier. Dont save here.
-  combinationLevel int
-  actionHeap []Heap
-  previous *SimpleState
-	robots []*Robot
-	boxes []*Box
-  cost int
-  goals []agentGoal
-  activeGoals []*agentGoal
 }
 
 /*
@@ -231,6 +281,7 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 	}
 
 	// PUSH / PULL
+  // TODO: in heuristic, consider if a completed goal is violated by the move of a box
 	for bIdx, box := range previous.boxes {
 		if (!isNeigbours(robot.pos, box.pos) || robot.color != box.color) {
 			continue
