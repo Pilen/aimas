@@ -1,6 +1,6 @@
 package main
 
-func heuristic(state *SimpleState) int {
+func heuristic(state *SimpleState, heuristic int) int {
   // TODO: When a goal is reached the next goal is picked the heuristic 
   //       grows a lot, and the solutions that only almost solves the task is picked.
 
@@ -23,10 +23,16 @@ func heuristic(state *SimpleState) int {
   // goalCount is the number of goal that does not have a box
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
-  goalCount := isDone(state.boxes) * 100
-  totalDistance = totalDistance    * 2
-  goalDistance = goalDistance      * 1
-
+  goalCount := isDone(state.boxes)
+  if(heuristic == 0){
+    goalCount = goalCount            * 100
+    totalDistance = totalDistance    * 2
+    goalDistance = goalDistance      * 1
+  } else {
+    goalCount = goalCount            * 100
+    totalDistance = totalDistance    * 2
+    goalDistance = goalDistance      * 1
+  }
   result := totalDistance + goalDistance + goalCount
 
   dprintf("H = %d, tD: %d, gD: %d, gC: %d", result, totalDistance, goalDistance, goalCount)
