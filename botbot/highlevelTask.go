@@ -13,7 +13,7 @@ func heuristic(state *SimpleState, heuristic int) int {
 
   // goalDistance is the distance of all goals remaining:
   //////////////////////////////////////////////////////////////////////////////
-  goalDistance := 0 
+  goalDistance := 0
   for _, g := range state.goals {
     box := state.boxes[g.boxIdx]
     goal := goals[g.goalIdx]
@@ -24,9 +24,9 @@ func heuristic(state *SimpleState, heuristic int) int {
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
   goalCount := isDone(state.boxes)
-  if(heuristic == 0){
+  if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
     goalCount = goalCount            * 100
-    totalDistance = totalDistance    * 2
+    totalDistance = totalDistance    * 1
     goalDistance = goalDistance      * 1
   } else {
     goalCount = goalCount            * 100
@@ -47,6 +47,7 @@ func newGoal(robotIdx int, state *SimpleState) {
   var nextGoal agentGoal
   idx := -1
   distance := 9999999
+  priority := 0
   for i, g := range state.goals {
     box := state.boxes[g.boxIdx] 
     goal := goals[g.goalIdx] 
@@ -61,10 +62,11 @@ func newGoal(robotIdx int, state *SimpleState) {
       continue
     }
 
-    if(distance > newDistA + newDistB){
+    if(priority < goal.priority || priority == goal.priority && distance > newDistA + newDistB) {
       idx = i
       nextGoal = g
       distance = newDistA + newDistB
+      priority = goal.priority
     }
   }
 
