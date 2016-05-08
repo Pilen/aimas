@@ -4,12 +4,13 @@ import (
     // "net/http"
     // _ "net/http/pprof"
     "sync"
+    "strconv"
     // "time"
 )
 
 var wg sync.WaitGroup
 func main() {
-    debugPrint = true
+    //debugPrint = true
     section("Start")
     setupState()
     Parse()
@@ -19,6 +20,35 @@ func main() {
     section("APSP")
     all_pairs_shortest_path(&wallMap)
     printf("APSP work: %v", apspWork)
+
+    section("Room")
+    generate_rooms(&wallMap)
+    for j:=0; j<height; j++ {
+      str := ""
+      for i:=0; i<width; i++ {
+        if room_map[i][j] >= 0 {
+          str = str + " "
+        }
+        str = str + strconv.Itoa(room_map[i][j])
+      }
+      print(str)
+    }
+
+    for i, r := range rooms {
+      print( i )
+      if r.isRoom {
+        str := "connections: "
+        for _, i := range r.connections {
+          str = str + strconv.Itoa(i) + " "
+        }
+        print(str)
+      } else {
+        str := "exits: "
+        str = str + strconv.Itoa(r.in_idx)
+        str = str + " " +  strconv.Itoa(r.out_idx)
+        print(str)
+      }
+    }
 
     printf("sp: %d", checked_distance(Coordinate{1,1}, Coordinate{2,1}))
     section("Work")
