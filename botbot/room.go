@@ -102,54 +102,42 @@ func recurse(isRoom bool, id int, coord Coordinate, walls *[70][70]bool) {
 
   if( id < 0 ){
     id = get_next_room()
-    rooms = append(rooms, room{isRoom, -1, -1, coord, Coordinate{-1,-1}, make([]int, 0)})
+    rooms = append(rooms, room{isRoom, -1, -1, Coordinate{-1,-1}, Coordinate{-1,-1}, make([]int, 0)})
   } else if isRoom != rooms[id].isRoom { // If the type (room/wall) is different than the type of the id
-    newId := -1
-    if(!isRoom){
-      // connect room with road
-      var r room // road
-      // Does it already exist?
-      if(room_map[coord.x][coord.y] > 0){
-        newId = room_map[coord.x][coord.y]
-        r = rooms[newId]
-      } else {
-        // create new and connect
-        r = room{false, id, -1, coord, Coordinate{-1,-1}, make([]int, 0)}
-        r.in_idx = id
-        r.in_pos = coord
-        rooms = append(rooms, r)
-        newId = len(rooms)-1
-      }
-      // connect other to this,
-      r.out_idx = newId
-      r.out_pos = coord
-
-      // connect this to existing
-      rooms[id].connections = append(rooms[id].connections, newId)
-    } else {
-      // connect road with room
-      newId = room_map[coord.x][coord.y]
-      // Does it already exist?
-      if(newId > 0){
-        rooms[newId].connections = append(rooms[newId].connections, room_map[coord.x][coord.y])
-      } else {
-        r := room{true, -1, -1, Coordinate{-1,-1}, Coordinate{-1,-1}, make([]int, 0)}
-        rooms = append(rooms, r)
-        newId = len(rooms) - 1
-        rooms[newId].connections = append(rooms[newId].connections, id)
-      }
-
-      rooms[id].out_idx = newId
-      rooms[id].out_pos = coord
-    }
-    id = newId
+    return
   }
 
   room_map[coord.x][coord.y] = id
   nbrs := neighbours(coord)
   for _, pos := range nbrs {
-    roomify(walls, pos, id)
+    if(room_map[pos.x][pos.y] >= 0 && room_map[pos.x][pos.y] != id){
+      connect(isRoom, pos, id)
+    } else {
+      roomify(walls, pos, id)
+    }
   }
+}
+
+func connect(isRoom bool, coord Coordinate, id int) {
+  id1 := -1
+  id2 := -1
+  if(isRoom){
+    // connect room with road
+    id1 = room_map[coord.x][coord.y]
+    id2 = id
+  } else {
+    id1 = id
+    id2 = room_map[coord.x][coord.y]
+  }
+  // connect other to this,
+  if(rooms[id1].in_idx < 0 ){
+    rooms[id1].in_idx = id2
+    rooms[id1].in_pos = coord
+  } else {
+    rooms[id1].out_idx = id2
+    rooms[id1].out_pos = coord
+  }
+  rooms[id2].connections = append(rooms[id2].connections, id1)
 }
 
 func get_next_room() int {
