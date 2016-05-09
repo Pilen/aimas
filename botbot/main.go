@@ -10,7 +10,7 @@ import (
 
 var wg sync.WaitGroup
 func main() {
-    //debugPrint = true
+    debugPrint = true
     section("Start")
     setupState()
     Parse()

@@ -8,6 +8,8 @@ import (
     "unicode"
 )
 
+var all_robots []*Robot = make([]*Robot, 10)
+
 func Parse() {
     line_regex, _ := regexp.Compile("^([a-z]+)\\s*:\\s*([0-9A-Z](\\s*,\\s*[0-9A-Z])*)\\s*$")
     object_regex, _ := regexp.Compile("[0-9A-Z]")
@@ -65,12 +67,17 @@ func Parse() {
             width = len(line)
         }
     }
+    for _, r := range all_robots {
+        if(r != nil){
+            robots = append(robots, r)
+        }
+    }
 }
 
 func NewRobot(c rune, x int, y int) {
     color := object_colors[c]
     robot := Robot{Coordinate{x, y}, color, nil}
-    robots = append(robots, &robot)
+    all_robots[int(c) - '0'] = &robot
 }
 
 func NewGoal(c rune, x int, y int) {

@@ -36,11 +36,11 @@ func search() [][]agentAction {
     if(!frontier.IsEmpty()){
       dprintf("new min key: %d", frontier.minKey())
     }
-    //aStrings := ""
-    //for _, a := range (*previous.actualActions) {
-    //  aStrings += a.toString()
-    //}
-    //dprintf("checking: " + getHash(previous) + "out of %d type "+ aStrings + " cost: %d ", frontier.Size(), previous.cost)
+    aStrings := ""
+    for _, a := range (*previous.actualActions) {
+      aStrings += a.toString()
+    }
+    dprintf("checking: " + getHash(previous) + "out of %d type "+ aStrings + " cost: %d ", frontier.Size(), previous.cost)
     if(isDone(previous.boxes) == 0){
       var result [][]agentAction
       for previous.previous != nil {
@@ -76,7 +76,6 @@ func search() [][]agentAction {
 
     // TODO: Dont recalculate heuristic
     if(previous.combinationLevel >= 0){
-      //TODO: insert with the average or minimum minKey of all the action heaps as heuristic
       frontier.Insert(previous, costModifier * previous.cost + medianKey(previous.actionHeap) + previous.combinationLevel)
     } else {
       dprint("no reinsertion of " + getHash(previous))
@@ -104,6 +103,8 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
   newState := nextState(state)
   for i, action := range actions {
       if(action == nil) { // TODO: remove
+        dprintf("ERROR: nil action")
+        actions[i] = &noop{}
         continue
       }
       dprint(action.toString())
@@ -269,7 +270,6 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
     dprintf("GOAL: %v (%d,%d) -> (%d,%d)",previous.boxes[previous.activeGoals[i].boxIdx].letter,previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
   }
 
-  //TODO: NOOP
 	// MOVE
   newState := nextState(previous)
 	for _, neighbour := range neighbours(robot.pos) {
@@ -284,7 +284,6 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 	}
 
 	// PUSH / PULL
-  // TODO: in heuristic, consider if a completed goal is violated by the move of a box
 	for bIdx, box := range previous.boxes {
 		if (!isNeigbours(robot.pos, box.pos) || robot.color != box.color) {
 			continue
