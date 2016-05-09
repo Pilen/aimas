@@ -127,6 +127,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
             checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
+            checkRemoveGoal(newState, a.boxIdx)
           } else {
             dprint("Invalid push")
             actions[i] = &noop{}
@@ -139,6 +140,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
             checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
+            checkRemoveGoal(newState, a.boxIdx)
           } else {
             dprint("Invalid pull")
             actions[i] = &noop{}
@@ -150,14 +152,55 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
 }
 
 /*
+ * Remove a task if it is completed
+*/
+func checkRemoveGoal(state *SimpleState, boxIdx int){
+  for goalIdx, g := range goals {
+    if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
+      // Find task in active goals and remove if it fits
+      for i, t := range state.activeGoals {
+        if(t != nil && t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
+          state.activeGoals[i] = nil
+          dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+        }
+      }
+      // Find task in global goals
+      for i, t := range state.goals {
+        if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
+          state.goals = append(state.goals[:i], state.goals[i+1:]...)
+          dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+        }
+      }
+      return
+    }
+  }
+}
+
+/*
  * Add a new goal to the state if boxIdx is moved away from a goal
 */
 func checkAddGoal(state *SimpleState, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
-      // add goal to put the box back:
-      state.goals = append(state.goals, agentGoal{boxIdx, goalIdx})
-      dprint("ADDED GOAL!!")
+      // add goal to put the box back IF no other box is intended for that goal:
+      // IS any other box intended for that goal?
+      intended := false
+      for _, t := range state.activeGoals {
+        if(t != nil && t.goalIdx == goalIdx) {
+          intended = true
+        }
+      }
+      // Find task in global goals
+      for _, t := range state.goals {
+        if(t.goalIdx == goalIdx) {
+          intended = true
+        }
+      }
+      // Otherwise add that goal
+      if(!intended){
+        state.goals = append(state.goals, agentGoal{boxIdx, goalIdx})
+        dprintf("ADDED GOAL!! %d=%s", boxIdx, string(g.letter) )
+      }
       return
     }
   }
@@ -267,7 +310,7 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 
   dprintf("GENERATING: %d; %d for %d", robot.pos.x, robot.pos.y, i)
   if(previous.activeGoals[i] != nil){
-    dprintf("GOAL: %v (%d,%d) -> (%d,%d)",previous.boxes[previous.activeGoals[i].boxIdx].letter,previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
+    dprintf("GOAL: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeGoals[i].boxIdx].letter),previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
   }
 
 	// MOVE
