@@ -123,7 +123,8 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
           dprint("PUSH")
           newRPos := state.boxes[a.boxIdx].pos
           newBPos := applyDirection(state.boxes[a.boxIdx].pos, a.boxDirection)
-          if(isFree(newBPos, newState)){
+          // check that the move is still valid after the first agents has moved
+          if(isFree(newBPos, newState) && state.boxes[a.boxIdx].pos == applyDirection(state.robots[i].pos, a.agentDirection)){
             checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
@@ -136,7 +137,8 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
           dprint("PULL")
           newRPos := applyDirection(state.robots[i].pos, a.agentDirection)
           newBPos := state.robots[i].pos;
-          if(isFree(newRPos, newState)){
+          // check that the move is still valid after the first agents has moved
+          if(isFree(newRPos, newState) && newState.boxes[a.boxIdx].pos == applyDirection(newState.robots[i].pos, a.boxDirection)){
             checkAddGoal(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
