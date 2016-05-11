@@ -1,5 +1,22 @@
 package main
 
+import (
+    "strconv"
+)
+
+var storage_map [][]int
+// -1 = wall
+// 0 = on a critical path
+// 1 = not on a crititical path, but is road
+// 2 = not on a critical path, is room
+
+
+type agentGoal struct {
+  exactGoal bool //If true the box must be moved to the goal, otherwise it should just end up somewhere around (for storage)
+  boxIdx int
+  goalIdx int
+}
+
 func heuristic(state *SimpleState, heuristic int) int {
   // TODO: When a goal is reached the next goal is picked the heuristic 
   //       grows a lot, and the solutions that only almost solves the task is picked.
@@ -24,6 +41,7 @@ func heuristic(state *SimpleState, heuristic int) int {
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
   goalCount := isDone(state.boxes)
+  //goalCount := len(state.goals) TODO: len of goals does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
     goalCount = goalCount            * 100
     totalDistance = totalDistance    * 1
@@ -39,6 +57,12 @@ func heuristic(state *SimpleState, heuristic int) int {
   return result
 }
 
+func addStorageOrder(boxIdx int, state *SimpleState) {
+  // Find storage area
+  box := state.boxes[boxIdx]
+  state.goals = append(state.goals, agentGoal{false, boxIdx, room_map[box.pos.x][box.pos.y]})
+}
+
 func newGoal(robotIdx int, state *SimpleState) {
 
   copyGoals(state)
@@ -49,8 +73,8 @@ func newGoal(robotIdx int, state *SimpleState) {
   distance := 9999999
   priority := 0
   for i, g := range state.goals {
-    box := state.boxes[g.boxIdx] 
-    goal := goals[g.goalIdx] 
+    box := state.boxes[g.boxIdx]
+    goal := goals[g.goalIdx] // TODO: this will not work when using storage tasks
     robot := state.robots[robotIdx]
     // Check if robot and box are all compatible
     if(box.color != robot.color){
@@ -82,9 +106,7 @@ func newGoal(robotIdx int, state *SimpleState) {
 
 func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   if(state.activeGoals[i] == nil) {
-    if(state.activeGoals[i] == nil){
-      dprint("Goal is nil!!");
-    }
+    dprint("Goal is nil!!");
     newGoal(i, state)
   }
 
@@ -97,12 +119,30 @@ func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   goal := goals[agentGoal.goalIdx] 
 
   distA := checked_distance(robot.pos, box.pos)
-  distB := checked_distance(box.pos, goal.pos)
 
-  if state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos {
-    state.activeGoals[i] = nil
+  // Are we moving a box to its goal or to storage?
+  if(agentGoal.exactGoal){
+    distB := checked_distance(box.pos, goal.pos)
+
+    //if state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos {
+    //  state.activeGoals[i] = nil
+    //}
+    return distA + distB
   }
-  return distA + distB
+  // Storage: // if we are in a room that is not the room that we are moving the box from
+  if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && agentGoal.goalIdx != room_map[box.pos.x][box.pos.y]){
+    // are we done?
+    if(distA <= 1){
+      state.activeGoals[i] = nil
+    }
+    return distA // TODO: plus more
+  }
+
+  // If we are in a corridor, we need to get out
+  if(!rooms[room_map[box.pos.x][box.pos.y]].isRoom){
+
+  }
+  return 0
 }
 
 func getInitialGoals(boxes []*Box) []agentGoal{
@@ -124,7 +164,7 @@ func getInitialGoals(boxes []*Box) []agentGoal{
         distance = newDist
       }
     }
-    agentGoals = append(agentGoals, agentGoal{box, i})
+    agentGoals = append(agentGoals, agentGoal{true, box, i})
     reserved[box] = true
   }
 
@@ -133,10 +173,92 @@ func getInitialGoals(boxes []*Box) []agentGoal{
     dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[g.boxIdx].letter, boxes[g.boxIdx].pos.x, boxes[g.boxIdx].pos.y, goals[g.goalIdx].letter, goals[g.goalIdx].pos.x, goals[g.goalIdx].pos.y)
   }
 
+  calculate_storage(agentGoals)
   return agentGoals
 }
 
-type agentGoal struct {
-  boxIdx int
-  goalIdx int
+/*
+ * initialize storage map to the values:
+ * -1 = wall
+ * 0 = on a critical path
+ * 1 = not on a crititical path, but is road
+ * 2 = not on a critical path, is room
+ *
+ * This is calculated using the initial positions of boxes
+*/
+func calculate_storage(aGoals []agentGoal) {
+  // initialize storage map:
+  storage_map = make([][]int, width);
+  for x := 0; x < width; x++ {
+      storage_map[x] = make([]int, height);
+      for y := 0; y<height; y++ {
+        roomIdx := room_map[x][y]
+        if(roomIdx == -1){
+          storage_map[x][y] = -1
+          continue
+        }
+
+        if(rooms[roomIdx].isRoom && rooms[roomIdx].size == 1){ // connections are bad storage areas
+          storage_map[x][y] = 0
+        } else if rooms[roomIdx].isRoom {
+          storage_map[x][y] = 2
+          // if either of the room cells neigbours are a corridor, this is not a good storage spot:
+          for _, pos := range neighbours(Coordinate{x,y}) {
+            if(room_map[pos.x][pos.y] >= 0 && !rooms[room_map[pos.x][pos.y]].isRoom){
+              storage_map[x][y] = 1
+              break
+            }
+          }
+        } else {
+          storage_map[x][y] = 1
+        }
+      }
+  }
+
+  // mark locations in storage map that are critical paths
+  for _, g := range aGoals {
+    markPath(boxes[g.boxIdx].pos, goals[g.goalIdx].pos)
+    // if the goal or box is inside a road, we mark the whole road
+    roomIdxB := room_map[boxes[g.boxIdx].pos.x][boxes[g.boxIdx].pos.y]
+    startB   := rooms[roomIdxB].in_pos
+    endB     := rooms[roomIdxB].out_pos
+    markRoad(Coordinate{-1, -1}, startB, endB, roomIdxB, 0)
+
+    roomIdxG := room_map[goals[g.goalIdx].pos.x][goals[g.goalIdx].pos.y]
+    startG   := rooms[roomIdxG].in_pos
+    endG     := rooms[roomIdxG].out_pos
+    markRoad(Coordinate{-1, -1}, startG, endG, roomIdxG, 0)
+  }
+
+  // Debug print
+  for j:=0; j<height; j++ {
+    str := ""
+    for i:=0; i<width; i++ {
+      if storage_map[i][j] >= 0 {
+        str = str + " "
+      }
+      str = str + strconv.Itoa(storage_map[i][j])
+    }
+    print(str)
+  }
+
+}
+
+/*
+ * Iterates through all cells on a road between start and end coordinate and
+ * marks the cells with storage value storageVal  
+*/
+func markRoad(previous, current, endCoord Coordinate, roadIdx, storageVal int) {
+
+  storage_map[current.x][current.y] = storageVal
+
+  if(current == endCoord){
+    return
+  }
+
+  for _, pos := range neighbours(current) {
+    if(pos != previous && room_map[current.x][current.y] == roadIdx){
+      markRoad(current, pos, endCoord, roadIdx, storageVal)
+    }
+  }
 }

@@ -34,40 +34,44 @@ func checked_distance(start, end Coordinate) int {
 // HELPER FUNCTIONS:
 
 /*
- * Find the next coordinate and direction in the shortest path form start to end
+ * Marks the path between start and end as a critical path (value 0)
+ * in the storage_map defined in highlevelTask
 */
-//func nextNode(start, end Coordinate) (next Coordinate, dir rune) {
-//
-//    distX := checked_distance(Coordinate{start.x+1, start.y}, end);
-//    distX_ := checked_distance(Coordinate{start.x-1, start.y}, end);
-//    distY := checked_distance(Coordinate{start.x, start.y+1}, end);
-//    distY_ := checked_distance(Coordinate{start.x, start.y-1}, end);
-//
-//    next = Coordinate{start.x+1, start.y}
-//    minDist := distX
-//    dir = 'E'
-//
-//    if(minDist < 0 || distX_ < minDist && distX_ >= 0){
-//        next.x = start.x-1
-//        next.y = start.y
-//        minDist = distX_
-//        dir = 'W'
-//    }
-//    if(minDist < 0 || distY < minDist && distY >= 0){
-//        next.x = start.x
-//        next.y = start.y+1
-//        minDist = distY
-//        dir = 'S'
-//    }
-//    if(minDist < 0 || distY_ < minDist && distY_ >= 0){
-//        next.x = start.x
-//        next.y = start.y-1
-//        minDist = distY_
-//        dir = 'N'
-//    }
-//
-//    return next, dir
-//}
+func markPath(start, end Coordinate) {
+
+    storage_map[start.x][start.y] = 0
+
+    if(start == end){
+      return
+    }
+
+    distX := checked_distance(Coordinate{start.x+1, start.y}, end);
+    distX_ := checked_distance(Coordinate{start.x-1, start.y}, end);
+    distY := checked_distance(Coordinate{start.x, start.y+1}, end);
+    distY_ := checked_distance(Coordinate{start.x, start.y-1}, end);
+
+    next := Coordinate{start.x+1, start.y}
+    minDist := distX
+
+    if(minDist < 0 || distX_ < minDist && distX_ >= 0){
+        next.x = start.x-1
+        next.y = start.y
+        minDist = distX_
+    }
+    if(minDist < 0 || distY < minDist && distY >= 0){
+        next.x = start.x
+        next.y = start.y+1
+        minDist = distY
+    }
+    if(minDist < 0 || distY_ < minDist && distY_ >= 0){
+        next.x = start.x
+        next.y = start.y-1
+        minDist = distY_
+    }
+
+    markPath(next, end)
+
+}
 
 /*
  * Return an array where each cell contains the length of the shortest path to (coord)

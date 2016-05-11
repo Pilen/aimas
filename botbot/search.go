@@ -167,11 +167,16 @@ func checkRemoveGoal(state *SimpleState, boxIdx int){
         }
       }
       // Find task in global goals
+      idx := -1
       for i, t := range state.goals {
         if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
-          state.goals = append(state.goals[:i], state.goals[i+1:]...)
+          idx = i
           dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+          break
         }
+      }
+      if(idx >= 0){
+        state.goals = append(state.goals[:idx], state.goals[idx+1:]...)
       }
       return
     }
@@ -200,7 +205,7 @@ func checkAddGoal(state *SimpleState, boxIdx int){
       }
       // Otherwise add that goal
       if(!intended){
-        state.goals = append(state.goals, agentGoal{boxIdx, goalIdx})
+        state.goals = append(state.goals, agentGoal{true, boxIdx, goalIdx})
         dprintf("ADDED GOAL!! %d=%s", boxIdx, string(g.letter) )
       }
       return
@@ -416,18 +421,6 @@ func getHash(state *SimpleState) string {
     str += "(" + strconv.Itoa(b.pos.x) + ";" + string(b.color) + strconv.Itoa(b.pos.y) + ")"
   }
   return str
-}
-
-func all_child_states(state *State) []State {
-	var current []*SimpleState
-	for _, robot := range state.robots {
-		current = make([]*SimpleState, 0)
-
-		_ = current
-		_ = robot
-
-	}
-	return nil
 }
 
 func copyGoals(state *SimpleState) {

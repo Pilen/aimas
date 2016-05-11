@@ -10,6 +10,7 @@ type room struct {
   in_idx, out_idx int // index to connecting rooms (-1 if this is not a 
   in_pos, out_pos Coordinate
   connections []int
+  size int
 }
 
 func generate_rooms(walls *[70][70]bool) {
@@ -102,12 +103,13 @@ func recurse(isRoom bool, id int, coord Coordinate, walls *[70][70]bool) {
 
   if( id < 0 ){
     id = get_next_room()
-    rooms = append(rooms, room{isRoom, -1, -1, Coordinate{-1,-1}, Coordinate{-1,-1}, make([]int, 0)})
+    rooms = append(rooms, room{isRoom, -1, -1, Coordinate{-1,-1}, Coordinate{-1,-1}, make([]int, 0), 0})
   } else if isRoom != rooms[id].isRoom { // If the type (room/wall) is different than the type of the id
     return
   }
 
   room_map[coord.x][coord.y] = id
+  rooms[id].size = rooms[id].size + 1
   nbrs := neighbours(coord)
   for _, pos := range nbrs {
     if(room_map[pos.x][pos.y] >= 0 && room_map[pos.x][pos.y] != id){

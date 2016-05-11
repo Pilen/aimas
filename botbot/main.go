@@ -23,13 +23,16 @@ func main() {
 
     section("Room")
     generate_rooms(&wallMap)
+
     for j:=0; j<height; j++ {
       str := ""
       for i:=0; i<width; i++ {
         if room_map[i][j] >= 0 {
           str = str + " "
+          str = str + strconv.Itoa(rooms[room_map[i][j]].size)
+        }else {
+          str = str + "  "
         }
-        str = str + strconv.Itoa(room_map[i][j])
       }
       print(str)
     }
