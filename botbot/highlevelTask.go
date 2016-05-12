@@ -41,19 +41,48 @@ func heuristic(state *SimpleState, heuristic int) int {
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
   goalCount := isDone(state.boxes)
+
+  // storage punishmet adds up punishment for each box that is on a non-storage
+  // area
+  //////////////////////////////////////////////////////////////////////////////
+  storagePun := 0
+  for i, box := range state.boxes {
+      // If the box is an active goal, we do not punish the box for being at a
+      // critical path
+      boxIsGoal := false
+      for _, goal := range state.activeGoals {
+          if(goal != nil && goal.boxIdx == i){
+            boxIsGoal = true
+            break
+          }
+      }
+      if(boxIsGoal){
+        break
+      }
+
+      // Deside punishment based on the storage level of the box
+      storage := storage_map[box.pos.x][box.pos.y] 
+      if(storage == 0){  // 0 = on a critical path
+        storagePun += 2
+      }
+      if(storage == 1){  // 1 = not on a crititical path, but is road
+        storagePun += 1
+      }
+      if(storage == 2){  // 2 = not on a critical path, is room
+        storagePun += 0
+      }
+  }
+
   //goalCount := len(state.goals) TODO: len of goals does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
-    goalCount = goalCount            * 100
-    totalDistance = totalDistance    * 1
-    goalDistance = goalDistance      * 1
-  } else {
-    goalCount = goalCount            * 100
-    totalDistance = totalDistance    * 2
-    goalDistance = goalDistance      * 1
+    goalCount     = goalCount     * 100
+    totalDistance = totalDistance * 1
+    goalDistance  = goalDistance  * 1
+    storagePun    = storagePun    * 2
   }
-  result := totalDistance + goalDistance + goalCount
+  result := totalDistance + goalDistance + goalCount + storagePun
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d", result, totalDistance, goalDistance, goalCount)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d", result, totalDistance, goalDistance, goalCount, storagePun)
   return result
 }
 
@@ -249,7 +278,9 @@ func calculate_storage(aGoals []agentGoal) {
  * marks the cells with storage value storageVal  
 */
 func markRoad(previous, current, endCoord Coordinate, roadIdx, storageVal int) {
-
+  if(!isInsideP(current)){
+    return
+  }
   storage_map[current.x][current.y] = storageVal
 
   if(current == endCoord){

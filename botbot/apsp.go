@@ -125,6 +125,10 @@ func add(x int, y int, length int, added *[70][70]bool, walls *[70][70]bool, cel
     }
 }
 
+func isInsideP(pos Coordinate) bool {
+  return isInside(pos.x, pos.y)
+}
+
 func isInside(x int, y int,) bool {
     return x >= 0 && x <= width-1 && y >= 0 && y <= height-1 ;
 }
