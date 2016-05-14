@@ -39,7 +39,9 @@ func checked_distance(start, end Coordinate) int {
 */
 func markPath(start, end Coordinate) {
 
-    storage_map[start.x][start.y] = 0
+    if(!rooms[room_map[start.x][start.y]].isRoom){
+      storage_map[start.x][start.y] = 0
+    }
 
     if(start == end){
       return

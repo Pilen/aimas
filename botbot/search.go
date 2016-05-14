@@ -15,6 +15,7 @@ type SimpleState struct {
   cost int
   goals []agentGoal
   activeGoals []*agentGoal
+  heuristicModifier int // used to punish/award generations of states
 }
 
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
@@ -23,11 +24,17 @@ func search() [][]agentAction {
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
-  previous := &SimpleState{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialGoals(boxes), make([]*agentGoal, len(robots))}
+  previous := &SimpleState{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialGoals(boxes), make([]*agentGoal, len(robots)), 0}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
   frontier.Insert(previous, 0)
 
+  // Create storage orders on all boxes that lies on a critical path
+  //for i, box := range boxes {
+  //  if(storage_map[box.pos.x][box.pos.y] == 0){
+  //    addStorageOrder(i, previous)
+  //  }
+  //}
 
 	// A* algorithm
   for !frontier.IsEmpty() {
@@ -161,9 +168,17 @@ func checkRemoveGoal(state *SimpleState, boxIdx int){
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
       // Find task in active goals and remove if it fits
       for i, t := range state.activeGoals {
-        if(t != nil && t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
-          state.activeGoals[i] = nil
-          dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+        if(t == nil){
+          continue
+        }
+        if(t.exactGoal){
+          if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
+            state.activeGoals[i] = nil
+            dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+          }
+        } else {
+          // Check if a non-exact goal has been completed:
+          // TODO: make better, what if there are no lvl 2 goals:
         }
       }
       // Find task in global goals
@@ -205,7 +220,7 @@ func checkAddGoal(state *SimpleState, boxIdx int){
       }
       // Otherwise add that goal
       if(!intended){
-        state.goals = append(state.goals, agentGoal{true, boxIdx, goalIdx})
+        state.goals = append(state.goals, agentGoal{true, boxIdx, goalIdx, Coordinate{-1, -1}})
         dprintf("ADDED GOAL!! %d=%s", boxIdx, string(g.letter) )
       }
       return
@@ -297,7 +312,7 @@ func generateCombinations(state *SimpleState) [][]agentAction {
  * measure the heurisic of the state.
 */
 func nextState(state *SimpleState) *SimpleState {
-  newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals}
+  newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals, state.heuristicModifier}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -317,7 +332,11 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 
   dprintf("GENERATING: %d; %d for %d", robot.pos.x, robot.pos.y, i)
   if(previous.activeGoals[i] != nil){
-    dprintf("GOAL: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeGoals[i].boxIdx].letter),previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
+    if(previous.activeGoals[i].exactGoal){
+      dprintf("GOAL: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeGoals[i].boxIdx].letter),previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
+    } else {
+      dprintf("Inexact GOAL: %s (%d, %d) -> (%d, %d)", string(previous.boxes[previous.activeGoals[i].boxIdx].letter), previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, previous.activeGoals[i].pos.x,previous.activeGoals[i].pos.y)
+    }
   }
 
 	// MOVE
@@ -330,7 +349,12 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
         dprint((&move{direction(robot.pos, neighbour)}).toString())
         actions.Insert(move{direction(robot.pos, neighbour)}, heuristic(newState, 1))
       }
-		}
+    // TODO is this good:
+    // If a box is is on a critical path, it may be in the way, and we reassign goals,
+    // so that if there is a 
+		}/* else if storage_map[neighbour.x][neighbour.y] == 0 {
+      reassignGoals(previous)
+    }*/
 	}
 
 	// PUSH / PULL
