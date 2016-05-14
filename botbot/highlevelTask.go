@@ -17,8 +17,8 @@ type agentGoal struct {
   goalIdx int
 }
 
-func heuristic(state *SimpleState, heuristic int) int {
-  // TODO: When a goal is reached the next goal is picked the heuristic 
+func heuristic(state *State, heuristic int) int {
+  // TODO: When a goal is reached the next goal is picked the heuristic
   //       grows a lot, and the solutions that only almost solves the task is picked.
 
   // totalDistance is the sum of distances from each agent to its goal
@@ -61,7 +61,7 @@ func heuristic(state *SimpleState, heuristic int) int {
       }
 
       // Deside punishment based on the storage level of the box
-      storage := storage_map[box.pos.x][box.pos.y] 
+      storage := storage_map[box.pos.x][box.pos.y]
       if(storage == 0){  // 0 = on a critical path
         storagePun += 2
       }
@@ -86,13 +86,13 @@ func heuristic(state *SimpleState, heuristic int) int {
   return result
 }
 
-func addStorageOrder(boxIdx int, state *SimpleState) {
+func addStorageOrder(boxIdx int, state *State) {
   // Find storage area
   box := state.boxes[boxIdx]
   state.goals = append(state.goals, agentGoal{false, boxIdx, room_map[box.pos.x][box.pos.y]})
 }
 
-func newGoal(robotIdx int, state *SimpleState) {
+func newGoal(robotIdx int, state *State) {
 
   copyGoals(state)
 
@@ -133,7 +133,7 @@ func newGoal(robotIdx int, state *SimpleState) {
   state.activeGoals[robotIdx] = &nextGoal
 }
 
-func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
+func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   if(state.activeGoals[i] == nil) {
     dprint("Goal is nil!!");
     newGoal(i, state)
@@ -145,7 +145,7 @@ func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   agentGoal := state.activeGoals[i]
   robot := state.robots[i]
   box := state.boxes[agentGoal.boxIdx]
-  goal := goals[agentGoal.goalIdx] 
+  goal := goals[agentGoal.goalIdx]
 
   distA := checked_distance(robot.pos, box.pos)
 
@@ -275,7 +275,7 @@ func calculate_storage(aGoals []agentGoal) {
 
 /*
  * Iterates through all cells on a road between start and end coordinate and
- * marks the cells with storage value storageVal  
+ * marks the cells with storage value storageVal
 */
 func markRoad(previous, current, endCoord Coordinate, roadIdx, storageVal int) {
   if(!isInsideP(current)){

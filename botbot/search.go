@@ -4,18 +4,6 @@ import (
   "strconv"
 )
 
-type SimpleState struct {
-  actualActions *[]agentAction
-  actionCombinations [][]agentAction // TODO: this should be done directly and stored in frontier. Dont save here.
-  combinationLevel int
-  actionHeap []Heap
-  previous *SimpleState
-  robots []*Robot
-  boxes []*Box
-  cost int
-  goals []agentGoal
-  activeGoals []*agentGoal
-}
 
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
@@ -23,7 +11,7 @@ func search() [][]agentAction {
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
-  previous := &SimpleState{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialGoals(boxes), make([]*agentGoal, len(robots))}
+  previous := &State{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialGoals(boxes), make([]*agentGoal, len(robots))}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
   frontier.Insert(previous, 0)
@@ -32,7 +20,7 @@ func search() [][]agentAction {
 	// A* algorithm
   for !frontier.IsEmpty() {
     dprintf("min key: %d", frontier.minKey())
-    previous = frontier.Extract().(*SimpleState)
+    previous = frontier.Extract().(*State)
     if(!frontier.IsEmpty()){
       dprintf("new min key: %d", frontier.minKey())
     }
@@ -99,7 +87,7 @@ func medianKey(heaps []Heap) int {
 }
 
 // Must have one action for each agent
-func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
+func joinActions(actions []agentAction, state *State) *State {
   newState := nextState(state)
   for i, action := range actions {
       if(action == nil) { // TODO: remove
@@ -156,7 +144,7 @@ func joinActions(actions []agentAction, state *SimpleState) *SimpleState {
 /*
  * Remove a task if it is completed
 */
-func checkRemoveGoal(state *SimpleState, boxIdx int){
+func checkRemoveGoal(state *State, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
       // Find task in active goals and remove if it fits
@@ -186,7 +174,7 @@ func checkRemoveGoal(state *SimpleState, boxIdx int){
 /*
  * Add a new goal to the state if boxIdx is moved away from a goal
 */
-func checkAddGoal(state *SimpleState, boxIdx int){
+func checkAddGoal(state *State, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
       // add goal to put the box back IF no other box is intended for that goal:
@@ -213,7 +201,7 @@ func checkAddGoal(state *SimpleState, boxIdx int){
   }
 }
 
-func generateCombinations(state *SimpleState) [][]agentAction {
+func generateCombinations(state *State) [][]agentAction {
   dprintf("combi lvl: %d", state.combinationLevel)
   // If we have no more possible actions
   if state.combinationLevel < 0 {
@@ -296,8 +284,8 @@ func generateCombinations(state *SimpleState) [][]agentAction {
  * creates a copy of state containing only the information needed to
  * measure the heurisic of the state.
 */
-func nextState(state *SimpleState) *SimpleState {
-  newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals}
+func nextState(state *State) *State {
+  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -310,7 +298,7 @@ func nextState(state *SimpleState) *SimpleState {
   return &newState
 }
 
-func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[string]bool) Heap {
+func generate_robot_actions(i int, previous *State, visitedStates *map[string]bool) Heap {
 
 	var actions Heap
   robot := previous.robots[i];
@@ -367,7 +355,7 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
   return actions
 }
 
-func isFree(coordinate Coordinate, state *SimpleState) bool {
+func isFree(coordinate Coordinate, state *State) bool {
   //printf("isFree(%d, %d) ?: " + getHash(state), coordinate.x, coordinate.y)
   if(wallMap[coordinate.x][coordinate.y]){
     return false
@@ -405,10 +393,10 @@ func isDone(boxes []*Box) int {
   return res
 }
 
-/* Creates a string from the SimpleState that can be used in a hashmap.
+/* Creates a string from the State that can be used in a hashmap.
  * only robots and boxes is considered, and the runtime is O(#robots+#boxes)
 */
-func getHash(state *SimpleState) string {
+func getHash(state *State) string {
   if state == nil || state.robots == nil || state.boxes == nil {
     dprint("INVALID STATE TO HASH")
     return ""
@@ -423,7 +411,7 @@ func getHash(state *SimpleState) string {
   return str
 }
 
-func copyGoals(state *SimpleState) {
+func copyGoals(state *State) {
   newGoals := make([]agentGoal, len(state.goals))
   newActiveGoals := make([]*agentGoal, len(state.activeGoals))
 

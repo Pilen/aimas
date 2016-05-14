@@ -38,14 +38,27 @@ type Goal struct {
 	priority int
 }
 
+// type State struct {
+// 	depth int
+// 	parent *State
+// 	relevance int
+// 	reservations map[Coordinate]bool
+// 	actions []agentAction
+// 	robots []*Robot
+// 	boxes []*Box
+// 	goalsLeft int
+// 	// task *Task
+// }
+
 type State struct {
-	depth int
-	parent *State
-	relevance int
-	reservations map[Coordinate]bool
-	actions []agentAction
-	robots []*Robot
-	boxes []*Box
-	goalsLeft int
-	// task *Task
+  actualActions *[]agentAction
+  actionCombinations [][]agentAction // TODO: this should be done directly and stored in frontier. Dont save here.
+  combinationLevel int
+  actionHeap []Heap
+  previous *State
+  robots []*Robot
+  boxes []*Box
+  cost int
+  goals []agentGoal
+  activeGoals []*agentGoal
 }
