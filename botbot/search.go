@@ -11,7 +11,7 @@ func search() [][]agentAction {
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
-  previous := &State{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialGoals(boxes), make([]*agentGoal, len(robots))}
+  previous := &State{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialTasks(boxes), make([]*Task, len(robots))}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
   frontier.Insert(previous, 0)
@@ -113,10 +113,10 @@ func joinActions(actions []agentAction, state *State) *State {
           newBPos := applyDirection(state.boxes[a.boxIdx].pos, a.boxDirection)
           // check that the move is still valid after the first agents has moved
           if(isFree(newBPos, newState) && state.boxes[a.boxIdx].pos == applyDirection(state.robots[i].pos, a.agentDirection)){
-            checkAddGoal(newState, a.boxIdx)
+            checkAddTask(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
-            checkRemoveGoal(newState, a.boxIdx)
+            checkRemoveTask(newState, a.boxIdx)
           } else {
             dprint("Invalid push")
             actions[i] = &noop{}
@@ -127,10 +127,10 @@ func joinActions(actions []agentAction, state *State) *State {
           newBPos := state.robots[i].pos;
           // check that the move is still valid after the first agents has moved
           if(isFree(newRPos, newState) && newState.boxes[a.boxIdx].pos == applyDirection(newState.robots[i].pos, a.boxDirection)){
-            checkAddGoal(newState, a.boxIdx)
+            checkAddTask(newState, a.boxIdx)
             newState.robots[i] = &Robot{newRPos, state.robots[i].color, state.robots[i].next}
             newState.boxes[a.boxIdx] = &Box{newBPos, state.boxes[a.boxIdx].color, state.boxes[a.boxIdx].letter}
-            checkRemoveGoal(newState, a.boxIdx)
+            checkRemoveTask(newState, a.boxIdx)
           } else {
             dprint("Invalid pull")
             actions[i] = &noop{}
@@ -143,28 +143,29 @@ func joinActions(actions []agentAction, state *State) *State {
 
 /*
  * Remove a task if it is completed
+ * TODO: Does this have to be O(n^2)
 */
-func checkRemoveGoal(state *State, boxIdx int){
+func checkRemoveTask(state *State, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
-      // Find task in active goals and remove if it fits
-      for i, t := range state.activeGoals {
+      // Find task in active tasks and remove if it fits
+      for i, t := range state.activeTasks {
         if(t != nil && t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
-          state.activeGoals[i] = nil
-          dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+          state.activeTasks[i] = nil
+          dprintf("REMOVED active TASK!! %d=%s", boxIdx, string(g.letter) )
         }
       }
-      // Find task in global goals
+      // Find task in global tasks
       idx := -1
-      for i, t := range state.goals {
+      for i, t := range state.tasks {
         if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
           idx = i
-          dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+          dprintf("REMOVED active TASK!! %d=%s", boxIdx, string(g.letter) )
           break
         }
       }
       if(idx >= 0){
-        state.goals = append(state.goals[:idx], state.goals[idx+1:]...)
+        state.tasks = append(state.tasks[:idx], state.tasks[idx+1:]...)
       }
       return
     }
@@ -174,27 +175,27 @@ func checkRemoveGoal(state *State, boxIdx int){
 /*
  * Add a new goal to the state if boxIdx is moved away from a goal
 */
-func checkAddGoal(state *State, boxIdx int){
+func checkAddTask(state *State, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
-      // add goal to put the box back IF no other box is intended for that goal:
+      // add task to put the box back IF no other box is intended for that goal:
       // IS any other box intended for that goal?
       intended := false
-      for _, t := range state.activeGoals {
+      for _, t := range state.activeTasks {
         if(t != nil && t.goalIdx == goalIdx) {
           intended = true
         }
       }
-      // Find task in global goals
-      for _, t := range state.goals {
+      // Find task in global tasks
+      for _, t := range state.tasks {
         if(t.goalIdx == goalIdx) {
           intended = true
         }
       }
-      // Otherwise add that goal
+      // Otherwise add that goal as task
       if(!intended){
-        state.goals = append(state.goals, agentGoal{true, boxIdx, goalIdx})
-        dprintf("ADDED GOAL!! %d=%s", boxIdx, string(g.letter) )
+        state.tasks = append(state.tasks, Task{true, boxIdx, goalIdx})
+        dprintf("ADDED TASK!! %d=%s", boxIdx, string(g.letter) )
       }
       return
     }
@@ -285,7 +286,7 @@ func generateCombinations(state *State) [][]agentAction {
  * measure the heurisic of the state.
 */
 func nextState(state *State) *State {
-  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals}
+  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.tasks, state.activeTasks}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -304,8 +305,8 @@ func generate_robot_actions(i int, previous *State, visitedStates *map[string]bo
   robot := previous.robots[i];
 
   dprintf("GENERATING: %d; %d for %d", robot.pos.x, robot.pos.y, i)
-  if(previous.activeGoals[i] != nil){
-    dprintf("GOAL: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeGoals[i].boxIdx].letter),previous.boxes[previous.activeGoals[i].boxIdx].pos.x, previous.boxes[previous.activeGoals[i].boxIdx].pos.y, goals[previous.activeGoals[i].goalIdx].pos.x, goals[previous.activeGoals[i].goalIdx].pos.y)
+  if(previous.activeTasks[i] != nil){
+    dprintf("TASK: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeTasks[i].boxIdx].letter),previous.boxes[previous.activeTasks[i].boxIdx].pos.x, previous.boxes[previous.activeTasks[i].boxIdx].pos.y, goals[previous.activeTasks[i].goalIdx].pos.x, goals[previous.activeTasks[i].goalIdx].pos.y)
   }
 
 	// MOVE
@@ -411,20 +412,20 @@ func getHash(state *State) string {
   return str
 }
 
-func copyGoals(state *State) {
-  newGoals := make([]agentGoal, len(state.goals))
-  newActiveGoals := make([]*agentGoal, len(state.activeGoals))
+func copyTasks(state *State) {
+  newTasks := make([]Task, len(state.tasks))
+  newActiveTasks := make([]*Task, len(state.activeTasks))
 
-  for i:=0; i<len(newGoals); i++ {
-    newGoals[i] = state.goals[i]
+  for i:=0; i<len(newTasks); i++ {
+    newTasks[i] = state.tasks[i]
   }
 
-  for i:=0; i<len(newActiveGoals); i++ {
-    newActiveGoals[i] = state.activeGoals[i]
+  for i:=0; i<len(newActiveTasks); i++ {
+    newActiveTasks[i] = state.activeTasks[i]
   }
 
-  state.goals = newGoals
-  state.activeGoals = newActiveGoals
+  state.tasks = newTasks
+  state.activeTasks = newActiveTasks
 }
 
 func initialActions() *[]agentAction{

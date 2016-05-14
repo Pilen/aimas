@@ -38,6 +38,12 @@ type Goal struct {
 	priority int
 }
 
+type Task struct {
+  exactGoal bool //If true the box must be moved to the goal, otherwise it should just end up somewhere around (for storage)
+  boxIdx int
+  goalIdx int
+}
+
 // type State struct {
 // 	depth int
 // 	parent *State
@@ -59,6 +65,6 @@ type State struct {
   robots []*Robot
   boxes []*Box
   cost int
-  goals []agentGoal
-  activeGoals []*agentGoal
+  tasks []Task
+  activeTasks []*Task
 }

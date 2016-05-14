@@ -11,14 +11,8 @@ var storage_map [][]int
 // 2 = not on a critical path, is room
 
 
-type agentGoal struct {
-  exactGoal bool //If true the box must be moved to the goal, otherwise it should just end up somewhere around (for storage)
-  boxIdx int
-  goalIdx int
-}
-
 func heuristic(state *State, heuristic int) int {
-  // TODO: When a goal is reached the next goal is picked the heuristic
+  // TODO: When a task is completed and the next is picked the heuristic
   //       grows a lot, and the solutions that only almost solves the task is picked.
 
   // totalDistance is the sum of distances from each agent to its goal
@@ -28,13 +22,15 @@ func heuristic(state *State, heuristic int) int {
     totalDistance += heuristicForAgent(i, r, state, true)
   }
 
-  // goalDistance is the distance of all goals remaining:
+  // taskDistance is the distance of all tasks remaining:
+  // TODO: This is actually already in the cost of the total distance?
+  // TODO: Also, how does this affect storage tasks?
   //////////////////////////////////////////////////////////////////////////////
-  goalDistance := 0
-  for _, g := range state.goals {
-    box := state.boxes[g.boxIdx]
-    goal := goals[g.goalIdx]
-    goalDistance += checked_distance(box.pos, goal.pos)
+  taskDistance := 0
+  for _, t := range state.tasks {
+    box := state.boxes[t.boxIdx]
+    goal := goals[t.goalIdx]
+    taskDistance += checked_distance(box.pos, goal.pos)
   }
 
   // goalCount is the number of goal that does not have a box
@@ -47,16 +43,16 @@ func heuristic(state *State, heuristic int) int {
   //////////////////////////////////////////////////////////////////////////////
   storagePun := 0
   for i, box := range state.boxes {
-      // If the box is an active goal, we do not punish the box for being at a
+      // If the box is an active task, we do not punish the box for being at a
       // critical path
-      boxIsGoal := false
-      for _, goal := range state.activeGoals {
-          if(goal != nil && goal.boxIdx == i){
-            boxIsGoal = true
+      boxIsTask := false
+      for _, task := range state.activeTasks {
+          if(task != nil && task.boxIdx == i){
+            boxIsTask = true
             break
           }
       }
-      if(boxIsGoal){
+      if(boxIsTask){
         break
       }
 
@@ -73,37 +69,38 @@ func heuristic(state *State, heuristic int) int {
       }
   }
 
-  //goalCount := len(state.goals) TODO: len of goals does not work as a heuristic, why?
+  //taskCount := len(state.tasks) TODO: len of tasks does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
-    goalCount     = goalCount     * 100
     totalDistance = totalDistance * 1
-    goalDistance  = goalDistance  * 1
+    taskDistance  = taskDistance  * 1
+    goalCount     = goalCount     * 100
     storagePun    = storagePun    * 2
   }
-  result := totalDistance + goalDistance + goalCount + storagePun
+  result := totalDistance + taskDistance + goalCount + storagePun
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d", result, totalDistance, goalDistance, goalCount, storagePun)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d", result, totalDistance, taskDistance, goalCount, storagePun)
   return result
 }
 
 func addStorageOrder(boxIdx int, state *State) {
   // Find storage area
   box := state.boxes[boxIdx]
-  state.goals = append(state.goals, agentGoal{false, boxIdx, room_map[box.pos.x][box.pos.y]})
+  // TODO: Why does this use the room_map?
+  state.tasks = append(state.tasks, Task{false, boxIdx, room_map[box.pos.x][box.pos.y]})
 }
 
-func newGoal(robotIdx int, state *State) {
+func newTask(robotIdx int, state *State) {
 
-  copyGoals(state)
+  copyTasks(state)
 
-  dprintf("New goal for %d", robotIdx)
-  var nextGoal agentGoal
+  dprintf("New task for %d", robotIdx)
+  var nextTask Task
   idx := -1
   distance := 9999999
   priority := 0
-  for i, g := range state.goals {
-    box := state.boxes[g.boxIdx]
-    goal := goals[g.goalIdx] // TODO: this will not work when using storage tasks
+  for i, t := range state.tasks {
+    box := state.boxes[t.boxIdx]
+    goal := goals[t.goalIdx] // TODO: this will not work when using storage tasks
     robot := state.robots[robotIdx]
     // Check if robot and box are all compatible
     if(box.color != robot.color){
@@ -117,7 +114,7 @@ func newGoal(robotIdx int, state *State) {
 
     if(priority < goal.priority || priority == goal.priority && distance > newDistA + newDistB) {
       idx = i
-      nextGoal = g
+      nextTask = t
       distance = newDistA + newDistB
       priority = goal.priority
     }
@@ -129,40 +126,40 @@ func newGoal(robotIdx int, state *State) {
     return
   }
 
-  state.goals = append(state.goals[:idx], state.goals[idx+1:]...)
-  state.activeGoals[robotIdx] = &nextGoal
+  state.tasks = append(state.tasks[:idx], state.tasks[idx+1:]...)
+  state.activeTasks[robotIdx] = &nextTask
 }
 
 func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
-  if(state.activeGoals[i] == nil) {
-    dprint("Goal is nil!!");
-    newGoal(i, state)
+  if(state.activeTasks[i] == nil) {
+    dprint("Task is nil!!");
+    newTask(i, state)
   }
 
-  if(state.activeGoals[i] == nil){
+  if(state.activeTasks[i] == nil){
     return 0
   }
-  agentGoal := state.activeGoals[i]
+  task := state.activeTasks[i]
   robot := state.robots[i]
-  box := state.boxes[agentGoal.boxIdx]
-  goal := goals[agentGoal.goalIdx]
+  box := state.boxes[task.boxIdx]
+  goal := goals[task.goalIdx]
 
   distA := checked_distance(robot.pos, box.pos)
 
   // Are we moving a box to its goal or to storage?
-  if(agentGoal.exactGoal){
+  if(task.exactGoal){
     distB := checked_distance(box.pos, goal.pos)
 
-    //if state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos {
-    //  state.activeGoals[i] = nil
+    //if state.boxes[state.activeTasks[i].boxIdx].pos == goals[state.activeTasks[i].goalIdx].pos {
+    //  state.activeTasks[i] = nil
     //}
     return distA + distB
   }
   // Storage: // if we are in a room that is not the room that we are moving the box from
-  if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && agentGoal.goalIdx != room_map[box.pos.x][box.pos.y]){
+  if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && task.goalIdx != room_map[box.pos.x][box.pos.y]){
     // are we done?
     if(distA <= 1){
-      state.activeGoals[i] = nil
+      state.activeTasks[i] = nil
     }
     return distA // TODO: plus more
   }
@@ -174,10 +171,10 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   return 0
 }
 
-func getInitialGoals(boxes []*Box) []agentGoal{
+func getInitialTasks(boxes []*Box) []Task{
 
   reserved := make([]bool, len(boxes))
-  agentGoals := make([]agentGoal, 0)
+  tasks := make([]Task, 0)
 
   for i, g := range goals {
     var box int
@@ -193,17 +190,17 @@ func getInitialGoals(boxes []*Box) []agentGoal{
         distance = newDist
       }
     }
-    agentGoals = append(agentGoals, agentGoal{true, box, i})
+    tasks = append(tasks, Task{true, box, i})
     reserved[box] = true
   }
 
-  dprint("GOALS:")
-  for _, g := range agentGoals {
-    dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[g.boxIdx].letter, boxes[g.boxIdx].pos.x, boxes[g.boxIdx].pos.y, goals[g.goalIdx].letter, goals[g.goalIdx].pos.x, goals[g.goalIdx].pos.y)
+  dprint("TASKS:")
+  for _, t := range tasks {
+    dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[t.boxIdx].letter, boxes[t.boxIdx].pos.x, boxes[t.boxIdx].pos.y, goals[t.goalIdx].letter, goals[t.goalIdx].pos.x, goals[t.goalIdx].pos.y)
   }
 
-  calculate_storage(agentGoals)
-  return agentGoals
+  calculate_storage(tasks)
+  return tasks
 }
 
 /*
@@ -215,7 +212,7 @@ func getInitialGoals(boxes []*Box) []agentGoal{
  *
  * This is calculated using the initial positions of boxes
 */
-func calculate_storage(aGoals []agentGoal) {
+func calculate_storage(tasks []Task) {
   // initialize storage map:
   storage_map = make([][]int, width);
   for x := 0; x < width; x++ {
@@ -245,15 +242,15 @@ func calculate_storage(aGoals []agentGoal) {
   }
 
   // mark locations in storage map that are critical paths
-  for _, g := range aGoals {
-    markPath(boxes[g.boxIdx].pos, goals[g.goalIdx].pos)
+  for _, t := range tasks {
+    markPath(boxes[t.boxIdx].pos, goals[t.goalIdx].pos)
     // if the goal or box is inside a road, we mark the whole road
-    roomIdxB := room_map[boxes[g.boxIdx].pos.x][boxes[g.boxIdx].pos.y]
+    roomIdxB := room_map[boxes[t.boxIdx].pos.x][boxes[t.boxIdx].pos.y]
     startB   := rooms[roomIdxB].in_pos
     endB     := rooms[roomIdxB].out_pos
     markRoad(Coordinate{-1, -1}, startB, endB, roomIdxB, 0)
 
-    roomIdxG := room_map[goals[g.goalIdx].pos.x][goals[g.goalIdx].pos.y]
+    roomIdxG := room_map[goals[t.goalIdx].pos.x][goals[t.goalIdx].pos.y]
     startG   := rooms[roomIdxG].in_pos
     endG     := rooms[roomIdxG].out_pos
     markRoad(Coordinate{-1, -1}, startG, endG, roomIdxG, 0)
