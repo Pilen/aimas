@@ -46,7 +46,7 @@ func heuristic(state *State, heuristic int) int {
   taskDistance := 0
   for _, t := range state.tasks {
     box := state.boxes[t.boxIdx]
-    goal := t.goal
+    goal := goals[t.goalIdx]
     taskDistance += checked_distance(box.pos, goal.pos)
   }
 
@@ -102,11 +102,8 @@ func heuristic(state *State, heuristic int) int {
 func addStorageOrder(boxIdx int, state *State) {
   // Find storage area
   box := state.boxes[boxIdx]
-    _ = box
-  // TODO: Why does this use the room_map? This is a very big hack and causes type errors
-    // state.tasks = append(state.tasks, Task{false, boxIdx, room_map[box.pos.x][box.pos.y]})
-    // TO fix i made it nil, TODO: decide how to handle, and handle correctly everywhere!!!
-  state.tasks = append(state.tasks, Task{false, boxIdx, nil})
+  // TODO: Why does this use the room_map?
+  state.tasks = append(state.tasks, Task{false, boxIdx, room_map[box.pos.x][box.pos.y]})
 }
 
 func newTask(robotIdx int, state *State) {
@@ -120,7 +117,7 @@ func newTask(robotIdx int, state *State) {
   priority := 0
   for i, t := range state.tasks {
     box := state.boxes[t.boxIdx]
-    goal := t.goal // TODO: this will not work when using storage tasks
+    goal := goals[t.goalIdx] // TODO: this will not work when using storage tasks
     robot := state.robots[robotIdx]
     // Check if robot and box are all compatible
     if(box.color != robot.color){
@@ -162,7 +159,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   task := state.activeTasks[i]
   robot := state.robots[i]
   box := state.boxes[task.boxIdx]
-  goal := task.goal
+  goal := goals[task.goalIdx]
 
   distA := checked_distance(robot.pos, box.pos)
 
@@ -170,20 +167,19 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   if(task.exactGoal){
     distB := checked_distance(box.pos, goal.pos)
 
-    //if state.boxes[state.activeTasks[i].boxIdx].pos == state.activeTasks[i].goal.pos {
+    //if state.boxes[state.activeTasks[i].boxIdx].pos == goals[state.activeTasks[i].goalIdx].pos {
     //  state.activeTasks[i] = nil
     //}
     return distA + distB
   }
-    // Storage: // if we are in a room that is not the room that we are moving the box from
-    //TODO THIS IS A TYPE ERROR
-  // if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && task.goalIdx != room_map[box.pos.x][box.pos.y]){
-  //   // are we done?
-  //   if(distA <= 1){
-  //     state.activeTasks[i] = nil
-  //   }
-  //   return distA // TODO: plus more
-  // }
+  // Storage: // if we are in a room that is not the room that we are moving the box from
+  if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && task.goalIdx != room_map[box.pos.x][box.pos.y]){
+    // are we done?
+    if(distA <= 1){
+      state.activeTasks[i] = nil
+    }
+    return distA // TODO: plus more
+  }
 
   // If we are in a corridor, we need to get out
   if(!rooms[room_map[box.pos.x][box.pos.y]].isRoom){
@@ -199,7 +195,7 @@ func getInitialTasks(boxes []*Box) []Task{
   reserved := make([]bool, len(boxes))
   tasks := make([]Task, 0)
 
-  for _, g := range goals {
+  for i, g := range goals {
     var box int
     distance := 999999999
 
@@ -213,13 +209,13 @@ func getInitialTasks(boxes []*Box) []Task{
         distance = newDist
       }
     }
-    tasks = append(tasks, Task{true, box, g})
+    tasks = append(tasks, Task{true, box, i})
     reserved[box] = true
   }
 
   dprint("TASKS:")
   for _, t := range tasks {
-    dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[t.boxIdx].letter, boxes[t.boxIdx].pos.x, boxes[t.boxIdx].pos.y, t.goal.letter, t.goal.pos.x, t.goal.pos.y)
+    dprintf("%v (%d,%d) -> %v (%d,%d)",boxes[t.boxIdx].letter, boxes[t.boxIdx].pos.x, boxes[t.boxIdx].pos.y, goals[t.goalIdx].letter, goals[t.goalIdx].pos.x, goals[t.goalIdx].pos.y)
   }
 
   calculate_storage(tasks)
@@ -266,14 +262,14 @@ func calculate_storage(tasks []Task) {
 
   // mark locations in storage map that are critical paths
   for _, t := range tasks {
-    markPath(boxes[t.boxIdx].pos, t.goal.pos)
+    markPath(boxes[t.boxIdx].pos, goals[t.goalIdx].pos)
     // if the goal or box is inside a road, we mark the whole road
     roomIdxB := room_map[boxes[t.boxIdx].pos.x][boxes[t.boxIdx].pos.y]
     startB   := rooms[roomIdxB].in_pos
     endB     := rooms[roomIdxB].out_pos
     markRoad(Coordinate{-1, -1}, startB, endB, roomIdxB, 0)
 
-    roomIdxG := room_map[t.goal.pos.x][t.goal.pos.y]
+    roomIdxG := room_map[goals[t.goalIdx].pos.x][goals[t.goalIdx].pos.y]
     startG   := rooms[roomIdxG].in_pos
     endG     := rooms[roomIdxG].out_pos
     markRoad(Coordinate{-1, -1}, startG, endG, roomIdxG, 0)

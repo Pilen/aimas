@@ -41,7 +41,7 @@ type Goal struct {
 type Task struct {
   exactGoal bool //If true the box must be moved to the goal, otherwise it should just end up somewhere around (for storage)
   boxIdx int
-  goal *Goal
+  goalIdx int
 }
 
 // type State struct {
