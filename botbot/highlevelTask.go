@@ -11,9 +11,26 @@ var storage_map [][]int
 // 2 = not on a critical path, is room
 
 
+// For improving agent heuristics, calculated once per state
+var occupied_map[70][70]bool
+
+
 func heuristic(state *State, heuristic int) int {
   // TODO: When a task is completed and the next is picked the heuristic
-  //       grows a lot, and the solutions that only almost solves the task is picked.
+    //       grows a lot, and the solutions that only almost solves the task is picked.
+
+    for x := 0; x < width; x++ {
+        for y := 0; y < height; y++ {
+            occupied_map[x][y] = wallMap[x][y]
+        }
+    }
+    for _, b := range state.boxes {
+        occupied_map[b.pos.x][b.pos.y] = true
+    }
+    // Todo should other robots be considered in occupancy?
+    for _, r := range state.robots {
+        occupied_map[r.pos.x][r.pos.y] = true
+    }
 
   // totalDistance is the sum of distances from each agent to its goal
   //////////////////////////////////////////////////////////////////////////////
@@ -170,6 +187,8 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   }
   return 0
 }
+
+
 
 func getInitialTasks(boxes []*Box) []Task{
 
