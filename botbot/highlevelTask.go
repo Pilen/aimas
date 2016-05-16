@@ -127,6 +127,10 @@ func heuristic(state *State, heuristic int) int {
       }
   }
 
+  // Level misconfiguration punishment
+  //////////////////////////////////////////////////////////////////////////////
+  misconfiguration := levelMisconfiguration(state)
+
   //taskCount := len(state.tasks) TODO: len of tasks does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
     totalDistance = totalDistance * 1
@@ -134,10 +138,12 @@ func heuristic(state *State, heuristic int) int {
     goalCount     = goalCount     * 100
     storagePun    = storagePun    * 2
     sameRoad      = sameRoad      * 30
+    misconfiguration = misconfiguration * 1
   }
-  result := totalDistance + taskDistance + goalCount + storagePun + sameRoad
+  result := totalDistance + taskDistance + goalCount + storagePun + sameRoad + misconfiguration
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d, m: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad, misconfiguration)
+
   return result
 }
 
@@ -336,6 +342,10 @@ done:
         }
     }
     return checked_distance(current, destination) - ideal_remaining
+}
+
+func levelMisconfiguration(state *State) int {
+    return 0
 }
 
 func getInitialTasks(boxes []*Box) []Task{
