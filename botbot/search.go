@@ -20,7 +20,7 @@ type SimpleState struct {
 
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
-  costModifier := 1
+  costModifier := 0
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap

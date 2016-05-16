@@ -222,9 +222,9 @@ func heuristic(state *SimpleState, heuristic int) int {
     totalDistance    = totalDistance    * 1
     goalDistance     = goalDistance     * 1
     storageTaskCount = storageTaskCount * -20
-    storagePun       = storagePun       * 2
+    storagePun       = storagePun       * 0
     sameRoad         = sameRoad         * 30
-    modifier         = modifier         * -25
+    modifier         = modifier         * -45
     boxInCorridorPun = boxInCorridorPun * 0
   }
   result := goalCount + totalDistance + goalDistance + storageTaskCount + storagePun + sameRoad + modifier + boxInCorridorPun
@@ -572,6 +572,10 @@ func calculate_storage(aGoals []agentGoal) {
     startG   := rooms[roomIdxG].in_pos
     endG     := rooms[roomIdxG].out_pos
     markRoad(Coordinate{-1, -1}, startG, endG, roomIdxG, 0)
+  }
+
+  for _, g := range goals {
+    storage_map[g.pos.x][g.pos.y] = 0
   }
 
 
