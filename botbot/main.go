@@ -64,6 +64,7 @@ func main() {
 
     section("Send plan")
     beginIOLoop(plan)
+    print("Steps in plan: ", len(plan))
 
     section("Finished")
     close(logCh)

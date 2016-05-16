@@ -162,7 +162,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   goal := goals[task.goalIdx]
 
   distA := checked_distance(robot.pos, box.pos)
-
+  badness := badnessOfShortestPath(i, r, state)
   // Are we moving a box to its goal or to storage?
   if(task.exactGoal){
     distB := checked_distance(box.pos, goal.pos)
@@ -170,7 +170,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
     //if state.boxes[state.activeTasks[i].boxIdx].pos == goals[state.activeTasks[i].goalIdx].pos {
     //  state.activeTasks[i] = nil
     //}
-    return distA + distB
+    return distA + distB + badness
   }
   // Storage: // if we are in a room that is not the room that we are moving the box from
   if(rooms[room_map[box.pos.x][box.pos.y]].isRoom && task.goalIdx != room_map[box.pos.x][box.pos.y]){
@@ -178,17 +178,107 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
     if(distA <= 1){
       state.activeTasks[i] = nil
     }
-    return distA // TODO: plus more
+    return distA + badness // TODO: plus more
   }
 
   // If we are in a corridor, we need to get out
   if(!rooms[room_map[box.pos.x][box.pos.y]].isRoom){
 
   }
-  return 0
+  return 0 + badness
 }
 
+func badnessOfShortestPath(i int, robot *Robot, state *State) int {
+    // Should we simply ignore robots or not?
+    task := state.activeTasks[i]
+    goal := goals[task.goalIdx]
 
+    var distance_to [70][70]int
+    for x := 0; x < width; x++ {
+        for y := 0; y < height; y++ {
+            distance_to[x][y] = 9000 // Infinity... ish
+        }
+    }
+
+    var came_from [70][70]Coordinate
+    var frontier Heap
+
+    if isNeigbours(robot.pos, goal.pos) {
+        // determine path from box to goal
+        if !task.exactGoal {
+            // Move box around
+            return 0
+        } else {
+            // ignore / add current box position
+            distance_to[robot.pos.x][robot.pos.y] = 0
+            distance_to[goal.pos.x][goal.pos.y] = 1
+            came_from[goal.pos.x][goal.pos.y] = robot.pos
+            frontier.Insert(robot.pos, 0)
+            frontier.Insert(goal.pos, 1)
+        }
+    } else {
+        // determine path from robot to box
+        distance_to[robot.pos.x][robot.pos.y] = 0
+        frontier.Insert(robot.pos, 0)
+    }
+
+    goal_room := room_map[goal.pos.x][goal.pos.y]
+    var current Coordinate
+    var distance int
+    for !frontier.IsEmpty() {
+        current = frontier.Extract().(Coordinate)
+        distance = distance_to[current.x][current.y]
+        current_room := room_map[current.x][current.y]
+
+        // if done?
+        if (current == goal.pos) { // We want to end when we completed the path
+            goto done
+        }
+        if (current_room != goal_room) { // We want to ensure we can get through the final room
+            if (rooms[current_room].isRoom) {
+                if distance > 20 {
+                    goto done
+                }
+            } else {
+                if distance > 40 {
+                    goto done
+
+                }
+            }
+        }
+        new_distance := distance + 1
+        for _, neighbour := range neighbours(current) {
+            if (occupied_map[neighbour.x][neighbour.y] ||
+                new_distance < distance_to[neighbour.x][neighbour.y]) {
+
+                distance_to[neighbour.x][neighbour.y] = new_distance
+                came_from[neighbour.x][neighbour.y] = current;
+                priority := new_distance + checked_distance(neighbour, goal.pos)
+                frontier.Insert(neighbour, priority)
+            }
+        }
+    }
+    // There is no way!
+    return 100
+done:
+    // Badness is defined as how far away from the goal we are by going "distance" steps by the acual level compared to the empty
+    ideal := robot.pos
+    ideal_remaining := 9000 //infinity
+    for i := 0; i <= distance; i++ {
+        if ideal == goal.pos {
+            ideal_remaining = 0;
+            break
+        }
+        for _, neighbour := range neighbours(ideal) {
+            new_remaining := checked_distance(neighbour, goal.pos)
+            if new_remaining < ideal_remaining {
+                ideal = neighbour
+                ideal_remaining = new_remaining
+            }
+        }
+    }
+    return checked_distance(current, goal.pos) - ideal_remaining
+}
 
 func getInitialTasks(boxes []*Box) []Task{
 
