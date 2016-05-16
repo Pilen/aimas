@@ -138,7 +138,7 @@ func heuristic(state *State, heuristic int) int {
     goalCount     = goalCount     * 100
     storagePun    = storagePun    * 2
     sameRoad      = sameRoad      * 30
-    misconfiguration = misconfiguration * 1
+    misconfiguration = misconfiguration * 10
   }
   result := totalDistance + taskDistance + goalCount + storagePun + sameRoad + misconfiguration
 
@@ -345,7 +345,38 @@ done:
 }
 
 func levelMisconfiguration(state *State) int {
-    return 0
+    total_badness := 0
+
+    room_fill := make([]int, len(rooms))
+    completed := make([]bool, len(state.boxes))
+
+    for _, box := range state.boxes {
+        room_id := room_map[box.pos.x][box.pos.y]
+        room_fill[room_id]++
+        goal_id := goalMap[box.pos.x][box.pos.y]
+        if goal_id >= 0 {
+            goal := goals[goal_id]
+            if box.letter == goal.letter {
+                completed[goal_id] = true
+            }
+        }
+    }
+
+    for goal_id, goal := range goals {
+        if completed[goal_id] {
+            continue
+        }
+        room := rooms[room_map[goal.pos.x][goal.pos.y]]
+        if room.isRoom {
+            for _, corridor_id := range room.connections {
+                fill := room_fill[corridor_id]
+                total_badness += goal.priority * fill
+            }
+        }
+    }
+
+    print("total_badness: ", total_badness)
+    return total_badness
 }
 
 func getInitialTasks(boxes []*Box) []Task{
