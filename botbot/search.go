@@ -312,7 +312,7 @@ func generateCombinations(state *SimpleState) [][]agentAction {
  * measure the heurisic of the state.
 */
 func nextState(state *SimpleState) *SimpleState {
-  newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, state.activeGoals, state.heuristicModifier}
+  newState := SimpleState{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.goals, make([]*agentGoal, len(state.activeGoals)), state.heuristicModifier}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -320,6 +320,10 @@ func nextState(state *SimpleState) *SimpleState {
 
   for i, box := range state.boxes {
     newState.boxes[i] = box
+  }
+
+  for i, g := range state.activeGoals {
+    newState.activeGoals[i] = g
   }
 
   return &newState
@@ -367,17 +371,27 @@ func generate_robot_actions(i int, previous *SimpleState, visitedStates *map[str
 				// PULL
 				for _, robot_dest := range neighbours(robot.pos) {
 					if robot_dest != box_dest && isFree(robot_dest, previous) {
+            // reset what may change during the heuristic calculation
+            newState.heuristicModifier = previous.heuristicModifier
+            newState.activeGoals[i] = previous.activeGoals[i]
+            // apply new state
             newState.robots[i] = &Robot{robot_dest, robot.color, robot.next}
             newState.boxes[bIdx] = &Box{box_dest, box.color, box.letter}
             newHash   := getHash(newState)
             if(!(*visitedStates)[newHash]){
               dprint((&pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos), bIdx}).toString())
               actions.Insert(pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos), bIdx}, heuristic(newState, 1))
+            } else {
+              dprint("has visited " + newHash)
             }
 					}
 				}
 			} else if isFree(box_dest, previous) {
 				// PUSH
+        // reset what may change during the heuristic calculation
+        newState.heuristicModifier = previous.heuristicModifier
+        newState.activeGoals[i] = previous.activeGoals[i]
+        // apply new state
         newState.robots[i] = &Robot{box.pos, robot.color, robot.next}
         newState.boxes[bIdx] = &Box{box_dest, box.color, box.letter}
         newHash   := getHash(newState)

@@ -4,13 +4,14 @@ import (
     // "net/http"
     // _ "net/http/pprof"
     "sync"
-    //"strconv"
+    "strconv"
     // "time"
 )
 
 var wg sync.WaitGroup
 func main() {
     debugPrint = true
+    //enable_storage = true
     section("Start")
     setupState()
     Parse()
@@ -24,34 +25,36 @@ func main() {
     section("Room")
     generate_rooms(&wallMap)
 
-    //for j:=0; j<height; j++ {
-    //  str := ""
-    //  for i:=0; i<width; i++ {
-    //    if room_map[i][j] >= 0 {
-    //      str = str + " "
-    //      str = str + strconv.Itoa(rooms[room_map[i][j]].size)
-    //    }else {
-    //      str = str + "  "
-    //    }
-    //  }
-    //  print(str)
-    //}
+    for j:=0; j<height; j++ {
+      str := ""
+      for i:=0; i<width; i++ {
+        if room_map[i][j] >= 0 {
+          if(room_map[i][j] < 10){
+            str = str + " "
+          }
+          str = str + strconv.Itoa(room_map[i][j])
+        }else {
+          str = str + "XX"
+        }
+      }
+      print(str)
+    }
 
-    //for i, r := range rooms {
-    //  print( i )
-    //  if r.isRoom {
-    //    str := "connections: "
-    //    for _, i := range r.connections {
-    //      str = str + strconv.Itoa(i) + " "
-    //    }
-    //    print(str)
-    //  } else {
-    //    str := "exits: "
-    //    str = str + strconv.Itoa(r.in_idx)
-    //    str = str + " " +  strconv.Itoa(r.out_idx)
-    //    print(str)
-    //  }
-    //}
+    for i, r := range rooms {
+      print( i )
+      if r.isRoom {
+        str := "connections: "
+        for _, i := range r.connections {
+          str = str + strconv.Itoa(i) + " "
+        }
+        print(str)
+      } else {
+        str := "exits: "
+        str = str + strconv.Itoa(r.in_idx)
+        str = str + " " +  strconv.Itoa(r.out_idx)
+        print(str)
+      }
+    }
 
     printf("sp: %d", checked_distance(Coordinate{1,1}, Coordinate{2,1}))
     section("Work")

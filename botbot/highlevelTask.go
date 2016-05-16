@@ -4,6 +4,8 @@ import (
     //"strconv"
 )
 
+var enable_storage bool
+
 var storage_map [][]int
 // -1 = wall
 // 0 = on a critical path
@@ -164,6 +166,27 @@ func heuristic(state *SimpleState, heuristic int) int {
       }
   }
 
+  // boxInCorridorPun is the number of agents that are pushing/pulling a box
+  // inside a corridor when the box is not part of its goal
+  //////////////////////////////////////////////////////////////////////////////
+  boxInCorridorPun := 0
+  //if(state.actualActions != nil){
+  //  for _, action := range *state.actualActions {
+  //    var ac interface{} = action
+  //    switch a := (ac).(type) {
+  //      case *move:
+  //        // not pushing a box
+  //      case *push:
+  //        // is the box being pushed the box from its goal
+  //        if(
+  //        //boxAction := state.boxes[a.boxIdx]
+  //      
+  //      case *pull:
+  //        box := state.boxes[a.boxIdx]
+  //    }
+  //  }
+  //}
+
   // heuristicModifier is used to remember how many storage goals has been completed.
   //////////////////////////////////////////////////////////////////////////////
   modifier := state.heuristicModifier
@@ -175,15 +198,19 @@ func heuristic(state *SimpleState, heuristic int) int {
     storageTaskCount = storageTaskCount * -20
     storagePun       = storagePun       * 2
     sameRoad         = sameRoad         * 30
-    modifier         = modifier         * -20
+    modifier         = modifier         * -25
+    boxInCorridorPun = boxInCorridorPun * 0
   }
-  result := goalCount + totalDistance + goalDistance + storageTaskCount + storagePun + sameRoad + modifier
+  result := goalCount + totalDistance + goalDistance + storageTaskCount + storagePun + sameRoad + modifier + boxInCorridorPun
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d sr: %d storageC: %d heuMod: %d", result, totalDistance, goalDistance, goalCount, storagePun, sameRoad, storageTaskCount, modifier)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d sr: %d storageC: %d heuMod: %d, boxInCor: %d", result, totalDistance, goalDistance, goalCount, storagePun, sameRoad, storageTaskCount, modifier, boxInCorridorPun)
   return result
 }
 
 func addStorageOrder(boxIdx int, state *SimpleState) {
+  if(!enable_storage){
+    return
+  }
   // Find storage area
   box := state.boxes[boxIdx]
   dprint("Adding storage order")
@@ -253,15 +280,24 @@ func newGoal(robotIdx int, state *SimpleState) {
 func storageGoalIsFinised(goal *agentGoal, state *SimpleState) bool {
 
   if(goal == nil || goal.exactGoal){
+    dprintf("bad false")
     return false
   }
   dprint("checking")
   box := state.boxes[goal.boxIdx]
+  roomIdx := room_map[box.pos.x][box.pos.y]
   // We must be at a proper storage location, AND not in the same corridor
-  // that we are trying to move away from
-  printf("storage val: %d comp: %d <> %d", storage_map[box.pos.x][box.pos.y], goal.goalIdx, room_map[box.pos.x][box.pos.y])
-  return storage_map[box.pos.x][box.pos.y] >= 1 && goal.goalIdx != room_map[box.pos.x][box.pos.y]
+  // that we are trying to move away from (or the cell just outside the corridor
+  //printf("storage val: %d comp: %d <> %d box(%d, %d) =? (%d,%d) =? (%d,%d)", storage_map[box.pos.x][box.pos.y], goal.goalIdx,roomIdx, box.pos.x, box.pos.y, rooms[roomIdx].in_pos.x, rooms[roomIdx].in_pos.y, rooms[roomIdx].out_pos.x, rooms[roomIdx].out_pos.y)
+  res := storage_map[box.pos.x][box.pos.y] >= 0 && goal.goalIdx != roomIdx && box.pos != rooms[goal.goalIdx].in_pos && box.pos != rooms[goal.goalIdx].out_pos
 
+  if(res){
+    dprint("storage goal check: TRUE")
+  } else {
+    dprint("storage goal check: FLASE")
+  }
+
+  return res
 }
 
 func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
@@ -282,7 +318,7 @@ func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
   // if we are in a corridor we will punish the robot if the next box in the
   // corridor is not part of its goal:
   roomIdx := room_map[robot.pos.x][robot.pos.y]
-  if(!rooms[roomIdx].isRoom){
+  if(!rooms[roomIdx].isRoom && enable_storage){
     nextBoxIdx := -1
     for _, pos := range neighbours(robot.pos) {
       // is the neigbour in the same room (corridor) as the agent
@@ -340,6 +376,10 @@ func heuristicForAgent(i int, r *Robot, state *SimpleState, again bool) int {
     //  state.activeGoals[i] = nil
     //}
     return distA + distB
+  }
+
+  if(!enable_storage){
+    return 0
   }
 
   //Otherwise move to a storage area
