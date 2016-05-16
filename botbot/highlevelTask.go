@@ -112,16 +112,32 @@ func heuristic(state *State, heuristic int) int {
       }
   }
 
+  // sameRoad is the number of agents that are on the same road:
+  //////////////////////////////////////////////////////////////////////////////
+  sameRoad := 0
+  visitedRoads := make(map[int]bool)
+  for _, agent := range state.robots {
+      roomIdx := room_map[agent.pos.x][agent.pos.y]
+      if(!rooms[roomIdx].isRoom){
+        if(visitedRoads[roomIdx]){
+          sameRoad += 1
+        } else {
+          visitedRoads[roomIdx] = true
+        }
+      }
+  }
+
   //taskCount := len(state.tasks) TODO: len of tasks does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
     totalDistance = totalDistance * 1
     taskDistance  = taskDistance  * 1
     goalCount     = goalCount     * 100
     storagePun    = storagePun    * 2
+    sameRoad      = sameRoad      * 30
   }
-  result := totalDistance + taskDistance + goalCount + storagePun
+  result := totalDistance + taskDistance + goalCount + storagePun + sameRoad
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d", result, totalDistance, taskDistance, goalCount, storagePun)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad)
   return result
 }
 
