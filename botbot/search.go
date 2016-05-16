@@ -155,17 +155,17 @@ func checkRemoveTask(state *State, boxIdx int){
           dprintf("REMOVED active TASK!! %d=%s", boxIdx, string(g.letter) )
         }
       }
-      // Find task in global tasks
+      // Find task in unassigned tasks
       idx := -1
-      for i, t := range state.tasks {
+      for i, t := range state.unassignedTasks {
         if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
           idx = i
-          dprintf("REMOVED active TASK!! %d=%s", boxIdx, string(g.letter) )
+          dprintf("REMOVED unassigned TASK!! %d=%s", boxIdx, string(g.letter) )
           break
         }
       }
       if(idx >= 0){
-        state.tasks = append(state.tasks[:idx], state.tasks[idx+1:]...)
+        state.unassignedTasks = append(state.unassignedTasks[:idx], state.unassignedTasks[idx+1:]...)
       }
       return
     }
@@ -186,15 +186,15 @@ func checkAddTask(state *State, boxIdx int){
           intended = true
         }
       }
-      // Find task in global tasks
-      for _, t := range state.tasks {
+      // Find task in unassignedl tasks
+      for _, t := range state.unassignedTasks {
         if(t.goalIdx == goalIdx) {
           intended = true
         }
       }
       // Otherwise add that goal as task
       if(!intended){
-        state.tasks = append(state.tasks, Task{true, boxIdx, goalIdx})
+        state.unassignedTasks = append(state.unassignedTasks, Task{true, boxIdx, goalIdx})
         dprintf("ADDED TASK!! %d=%s", boxIdx, string(g.letter) )
       }
       return
@@ -286,7 +286,7 @@ func generateCombinations(state *State) [][]agentAction {
  * measure the heurisic of the state.
 */
 func nextState(state *State) *State {
-  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.tasks, state.activeTasks}
+  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.unassignedTasks, state.activeTasks}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -413,18 +413,18 @@ func getHash(state *State) string {
 }
 
 func copyTasks(state *State) {
-  newTasks := make([]Task, len(state.tasks))
+  newUnassignedTasks := make([]Task, len(state.unassignedTasks))
   newActiveTasks := make([]*Task, len(state.activeTasks))
 
-  for i:=0; i<len(newTasks); i++ {
-    newTasks[i] = state.tasks[i]
+  for i:=0; i<len(newUnassignedTasks); i++ {
+    newUnassignedTasks[i] = state.unassignedTasks[i]
   }
 
   for i:=0; i<len(newActiveTasks); i++ {
     newActiveTasks[i] = state.activeTasks[i]
   }
 
-  state.tasks = newTasks
+  state.unassignedTasks = newUnassignedTasks
   state.activeTasks = newActiveTasks
 }
 

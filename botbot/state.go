@@ -65,6 +65,6 @@ type State struct {
   robots []*Robot
   boxes []*Box
   cost int
-  tasks []Task
+  unassignedTasks []Task
   activeTasks []*Task
 }

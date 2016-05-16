@@ -44,7 +44,7 @@ func heuristic(state *State, heuristic int) int {
   // TODO: Also, how does this affect storage tasks?
   //////////////////////////////////////////////////////////////////////////////
   taskDistance := 0
-  for _, t := range state.tasks {
+  for _, t := range state.unassignedTasks {
     box := state.boxes[t.boxIdx]
     goal := goals[t.goalIdx]
     taskDistance += checked_distance(box.pos, goal.pos)
@@ -134,7 +134,7 @@ func addStorageOrder(boxIdx int, state *State) {
   // Find storage area
   box := state.boxes[boxIdx]
   // TODO: Why does this use the room_map?
-  state.tasks = append(state.tasks, Task{false, boxIdx, room_map[box.pos.x][box.pos.y]})
+  state.unassignedTasks = append(state.unassignedTasks, Task{false, boxIdx, room_map[box.pos.x][box.pos.y]})
 }
 
 func newTask(robotIdx int, state *State) {
@@ -146,7 +146,7 @@ func newTask(robotIdx int, state *State) {
   idx := -1
   distance := 9999999
   priority := 0
-  for i, t := range state.tasks {
+  for i, t := range state.unassignedTasks {
     box := state.boxes[t.boxIdx]
     goal := goals[t.goalIdx] // TODO: this will not work when using storage tasks
     robot := state.robots[robotIdx]
@@ -174,7 +174,7 @@ func newTask(robotIdx int, state *State) {
     return
   }
 
-  state.tasks = append(state.tasks[:idx], state.tasks[idx+1:]...)
+  state.unassignedTasks = append(state.unassignedTasks[:idx], state.unassignedTasks[idx+1:]...)
   state.activeTasks[robotIdx] = &nextTask
 }
 
