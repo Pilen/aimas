@@ -7,12 +7,17 @@ var wallMap [70][70]bool
 var boxes []*Box
 var robots []*Robot
 var goals []*Goal
-var goalMap [70][70]bool
+var goalMap [70][70]int
 
 
 var apsp PathArray
 func setupState() {
 	object_colors = make(map[rune]Color)
+	for x := 0; x < 70; x++ {
+		for y := 0; y < 70; y++ {
+			goalMap[x][y] = -1
+		}
+	}
 }
 
 type Color string

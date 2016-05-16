@@ -27,7 +27,7 @@ func calculateGoalPriorities() {
         current := toBeVisited.Extract().(priorityNode)
         // if wallMap[current.x][current.y] {panic(fmt.Sprintf("wall at %v, %v\n", current.x, current.y))}
         priority := current.priority
-        if goalMap[current.x][current.y] {
+        if goalMap[current.x][current.y] >= 0 {
             priority++
         }
         // printf("%v, %v = %v", current.x, current.y, priority)

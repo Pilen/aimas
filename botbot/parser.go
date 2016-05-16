@@ -81,7 +81,7 @@ func NewRobot(c rune, x int, y int) {
 }
 
 func NewGoal(c rune, x int, y int) {
-    goalMap[x][y] = true
+    goalMap[x][y] = len(goals)
     goal := Goal{Coordinate{x, y}, unicode.ToUpper(c), -1}
     goals = append(goals, &goal)
 }
