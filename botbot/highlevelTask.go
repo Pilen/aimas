@@ -112,6 +112,21 @@ func heuristic(state *State, heuristic int) int {
       }
   }
 
+  // sameRoad is the number of agents that are on the same road:
+  //////////////////////////////////////////////////////////////////////////////
+  sameRoad := 0
+  visitedRoads := make(map[int]bool)
+  for _, agent := range state.robots {
+      roomIdx := room_map[agent.pos.x][agent.pos.y]
+      if(!rooms[roomIdx].isRoom){
+        if(visitedRoads[roomIdx]){
+          sameRoad += 1
+        } else {
+          visitedRoads[roomIdx] = true
+        }
+      }
+  }
+
   // Level misconfiguration punishment
   //////////////////////////////////////////////////////////////////////////////
   misconfiguration := levelMisconfiguration(state)
@@ -122,11 +137,13 @@ func heuristic(state *State, heuristic int) int {
     taskDistance  = taskDistance  * 1
     goalCount     = goalCount     * 100
     storagePun    = storagePun    * 2
+    sameRoad      = sameRoad      * 30
     misconfiguration = misconfiguration * 1
   }
-  result := totalDistance + taskDistance + goalCount + storagePun + misconfiguration
+  result := totalDistance + taskDistance + goalCount + storagePun + sameRoad + misconfiguration
 
-  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, m:%d", result, totalDistance, taskDistance, goalCount, storagePun, misconfiguration)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d, m: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad, misconfiguration)
+
   return result
 }
 
