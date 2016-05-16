@@ -61,11 +61,37 @@ func heuristic(state *SimpleState, heuristic int) int {
     }
   }
 
-  // goalCount is the number of goal that does not have a box
+  // goalCount is the number of goals that does not have a box and does not have
+  // priority less than an incomplete goal of higher priority
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
-  // Add all exact goals:
-  goalCount := isDone(state.boxes)
+  //goalCount := isDone(state)
+  minIncPrioriy := 0
+  for _, goal := range goals {
+    found := false
+    for _, box := range state.boxes {
+      if(goal.pos == box.pos && goal.letter == box.letter){
+        found = true
+        break
+      }
+    }
+    if !found && goal.priority > minIncPrioriy {
+      minIncPrioriy = goal.priority
+    }
+  }
+  goalCount := 0
+  for _, goal := range goals {
+    found := false
+    for _, box := range state.boxes {
+      if(goal.pos == box.pos && goal.letter == box.letter && goal.priority >= minIncPrioriy){
+        found = true
+        break
+      }
+    }
+    if !found {
+       goalCount += 1
+    }
+  }
 
 
   // Storage task count:
