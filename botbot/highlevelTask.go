@@ -116,7 +116,7 @@ func heuristic(state *State, heuristic int) int {
   //////////////////////////////////////////////////////////////////////////////
   misconfiguration := levelMisconfiguration(state)
 
-  //taskCount := len(state.tasks) TODO: len of tasks does not work as a heuristic, why?
+  //taskCount := len(state.unassignedTasks) TODO: len of unassignedTasks tasks does not work as a heuristic, why?
   if(heuristic == 0 || true){ // TODO: maybe use different heuristics for states and actions
     totalDistance = totalDistance * 1
     taskDistance  = taskDistance  * 1
