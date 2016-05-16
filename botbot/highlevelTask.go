@@ -192,6 +192,10 @@ func badnessOfShortestPath(i int, robot *Robot, state *State) int {
     // Should we simply ignore robots or not?
     task := state.activeTasks[i]
     goal := goals[task.goalIdx]
+    box := state.boxes[task.boxIdx]
+    _ = box
+    var destination Coordinate
+
 
     var distance_to [70][70]int
     for x := 0; x < width; x++ {
@@ -215,14 +219,20 @@ func badnessOfShortestPath(i int, robot *Robot, state *State) int {
             came_from[goal.pos.x][goal.pos.y] = robot.pos
             frontier.Insert(robot.pos, 0)
             frontier.Insert(goal.pos, 1)
+            destination = goal.pos
         }
     } else {
         // determine path from robot to box
-        distance_to[robot.pos.x][robot.pos.y] = 0
-        frontier.Insert(robot.pos, 0)
+        // distance_to[robot.pos.x][robot.pos.y] = 0
+        // frontier.Insert(robot.pos, 0)
+        // destination = box.pos
+
+        // TODO fix this so we can estimate distance to box
+        return 0
     }
 
-    goal_room := room_map[goal.pos.x][goal.pos.y]
+
+    destination_room := room_map[destination.x][destination.y]
     var current Coordinate
     var distance int
     for !frontier.IsEmpty() {
@@ -231,10 +241,13 @@ func badnessOfShortestPath(i int, robot *Robot, state *State) int {
         current_room := room_map[current.x][current.y]
 
         // if done?
-        if (current == goal.pos) { // We want to end when we completed the path
+        if (current == destination) { // We want to end when we completed the path
             goto done
         }
-        if (current_room != goal_room) { // We want to ensure we can get through the final room
+        if isNeigbours(current, destination) {
+            goto done
+        }
+        if (current_room != destination_room) { // We want to ensure we can get through the final room
             if (rooms[current_room].isRoom) {
                 if distance > 20 {
                     goto done
@@ -253,7 +266,7 @@ func badnessOfShortestPath(i int, robot *Robot, state *State) int {
 
                 distance_to[neighbour.x][neighbour.y] = new_distance
                 came_from[neighbour.x][neighbour.y] = current;
-                priority := new_distance + checked_distance(neighbour, goal.pos)
+                priority := new_distance + checked_distance(neighbour, destination)
                 frontier.Insert(neighbour, priority)
             }
         }
@@ -261,23 +274,26 @@ func badnessOfShortestPath(i int, robot *Robot, state *State) int {
     // There is no way!
     return 100
 done:
-    // Badness is defined as how far away from the goal we are by going "distance" steps by the acual level compared to the empty
+    // Badness is defined as how far away from the destination we are by going "distance" steps by the acual level compared to the empty
     ideal := robot.pos
     ideal_remaining := 9000 //infinity
     for i := 0; i <= distance; i++ {
-        if ideal == goal.pos {
+        if ideal == destination {
             ideal_remaining = 0;
             break
         }
+        if isNeigbours(ideal, destination) {
+            break
+        }
         for _, neighbour := range neighbours(ideal) {
-            new_remaining := checked_distance(neighbour, goal.pos)
+            new_remaining := checked_distance(neighbour, destination)
             if new_remaining < ideal_remaining {
                 ideal = neighbour
                 ideal_remaining = new_remaining
             }
         }
     }
-    return checked_distance(current, goal.pos) - ideal_remaining
+    return checked_distance(current, destination) - ideal_remaining
 }
 
 func getInitialTasks(boxes []*Box) []Task{

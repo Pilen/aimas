@@ -61,6 +61,7 @@ func main() {
     // path3 := pullToPlan(apsp, 4, 5, 3, 5, &pullTo{7, 1})
     // mPath := merge(append(path, append(path2, path3...)...))
     plan := search()
+    print("Steps in plan: ", len(plan))
 
     section("Send plan")
     beginIOLoop(plan)
