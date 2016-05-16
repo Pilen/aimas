@@ -53,7 +53,33 @@ func heuristic(state *State, heuristic int) int {
   // goalCount is the number of goal that does not have a box
   // This makes it more expensive to move boxes that are already on a box
   //////////////////////////////////////////////////////////////////////////////
-  goalCount := isDone(state.boxes)
+  //goalCount := isDone(state.boxes)
+  minIncPrioriy := 0
+  for _, goal := range goals {
+    found := false
+    for _, box := range state.boxes {
+      if(goal.pos == box.pos && goal.letter == box.letter){
+        found = true
+        break
+      }
+    }
+    if !found && goal.priority > minIncPrioriy {
+      minIncPrioriy = goal.priority
+    }
+  }
+  goalCount := 0
+  for _, goal := range goals {
+    found := false
+    for _, box := range state.boxes {
+      if(goal.pos == box.pos && goal.letter == box.letter && goal.priority >= minIncPrioriy){
+        found = true
+        break
+      }
+    }
+    if !found {
+       goalCount += 1
+    }
+  }
 
   // storage punishmet adds up punishment for each box that is on a non-storage
   // area
