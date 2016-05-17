@@ -237,7 +237,7 @@ func heuristic(state *State, heuristic int) int {
     storagePun    = storagePun    * 2
     sameRoad      = sameRoad      * 30
     modifier         = modifier         * -45
-    misconfiguration = misconfiguration * 10
+    misconfiguration = misconfiguration * 0
     boxInCorridorPun = boxInCorridorPun * 0
   }
   result := totalDistance + taskDistance + storageTaskCount + goalCount + storagePun + sameRoad + modifier + misconfiguration + boxInCorridorPun
@@ -275,7 +275,7 @@ func newTask(robotIdx int, state *State) {
     }
 
     if(t.exactGoal) {
-      goal := goals[t.goalIdx] // TODO: this will not work when using storage tasks
+      goal := goals[t.goalIdx]
       newDistA := checked_distance(robot.pos, box.pos)
       newDistB := checked_distance(box.pos, goal.pos)
       if(newDistA < 0 || newDistB < 0){
@@ -386,7 +386,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
         // If a store box goal already exists, then remove it:
         idx := -1
         for j, g := range state.unassignedTasks {
-          if(g.exactGoal && g.boxIdx == nextBoxIdx){
+          if(!g.exactGoal && g.boxIdx == nextBoxIdx){
             idx = j
           }
         }
@@ -395,7 +395,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
         }
 
         for j, t := range state.activeTasks {
-          if(t != nil && t.exactGoal && t.boxIdx == nextBoxIdx){
+          if(t != nil && !t.exactGoal && t.boxIdx == nextBoxIdx){
             state.activeTasks[j] = nil
           }
         }
@@ -409,8 +409,8 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
 
   // Are we moving a box to its goal
   if(task.exactGoal){
-    t := goals[task.goalIdx]
-    distB := checked_distance(box.pos, t.pos)
+    goal := goals[task.goalIdx]
+    distB := checked_distance(box.pos, goal.pos)
 
 
     //if state.boxes[state.activeGoals[i].boxIdx].pos == goals[state.activeGoals[i].goalIdx].pos {
@@ -445,6 +445,9 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   }
 
   dprint("Calculating heuristic for storage goal")
+
+  // Find out if there exists a task needing this box, if so, we want to store
+  // it closer to the goal
   goalPos := Coordinate{-1,-1}
   for _, t := range state.activeTasks {
     if(t != nil && t.exactGoal && t.boxIdx == t.boxIdx){
@@ -494,7 +497,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   if storageValue >= 0 {
     return storageDistance + distA + badness
   }
-  return badness
+  return distA + badness
 }
 
 func badnessOfShortestPath(i int, robot *Robot, state *State) int {
