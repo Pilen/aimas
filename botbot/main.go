@@ -11,6 +11,7 @@ import (
 var wg sync.WaitGroup
 func main() {
     //debugPrint = true
+    enable_storage = true
     section("Start")
     setupState()
     Parse()
@@ -28,10 +29,12 @@ func main() {
       str := ""
       for i:=0; i<width; i++ {
         if room_map[i][j] >= 0 {
-          str = str + " "
-          str = str + strconv.Itoa(rooms[room_map[i][j]].size)
+          if(room_map[i][j] < 10){
+            str = str + " "
+          }
+          str = str + strconv.Itoa(room_map[i][j])
         }else {
-          str = str + "  "
+          str = str + "XX"
         }
       }
       print(str)

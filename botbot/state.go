@@ -47,6 +47,7 @@ type Task struct {
   exactGoal bool //If true the box must be moved to the goal, otherwise it should just end up somewhere around (for storage)
   boxIdx int
   goalIdx int
+  pos Coordinate // the coordinate of the approximate storage location, used when exactGoal == false
 }
 
 // type State struct {
@@ -72,4 +73,5 @@ type State struct {
   cost int
   unassignedTasks []Task
   activeTasks []*Task
+  heuristicModifier int // used to punish/award generations of states
 }

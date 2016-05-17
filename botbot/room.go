@@ -127,7 +127,14 @@ func connect(isRoom bool, coord Coordinate, id int) {
     // connect room with road
     id1 = room_map[coord.x][coord.y]
     id2 = id
+    // Make sure that coord is a part of the room, not the road
+    for _, pos := range neighbours(coord) {
+      if( room_map[pos.x][pos.y] == id2 ) {
+        coord = pos
+      }
+    }
   } else {
+    // connect road with room
     id1 = id
     id2 = room_map[coord.x][coord.y]
   }

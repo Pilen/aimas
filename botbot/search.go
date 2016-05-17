@@ -4,18 +4,23 @@ import (
   "strconv"
 )
 
-
 // func search(robots []Robot, boxes []Box, heuristic func([]Robot, []Box) int, goalReached([]Robot, []Box) bool) {
 func search() [][]agentAction {
-  costModifier := 1
+  costModifier := 0
   dprint("SEARCHING")
   // INITIALIZE STATE
 	var frontier Heap
-  previous := &State{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialTasks(boxes), make([]*Task, len(robots))}
+  previous := &State{initialActions(),make([][]agentAction, 0), 0, make([]Heap, len(robots)), nil, robots, boxes, 0, getInitialTasks(boxes), make([]*Task, len(robots)), 0}
   visitedStates := make(map[string]bool)
   visitedStates[getHash(previous)]=true
   frontier.Insert(previous, 0)
 
+  // Create storage orders on all boxes that lies on a critical path
+  //for i, box := range boxes {
+  //  if(storage_map[box.pos.x][box.pos.y] == 0){
+  //    addStorageOrder(i, previous)
+  //  }
+  //}
 
 	// A* algorithm
   for !frontier.IsEmpty() {
@@ -148,11 +153,19 @@ func joinActions(actions []agentAction, state *State) *State {
 func checkRemoveTask(state *State, boxIdx int){
   for goalIdx, g := range goals {
     if g.pos == state.boxes[boxIdx].pos && g.letter == state.boxes[boxIdx].letter {
-      // Find task in active tasks and remove if it fits
+      // Find task in active goals and remove if it fits
       for i, t := range state.activeTasks {
-        if(t != nil && t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
-          state.activeTasks[i] = nil
-          dprintf("REMOVED active TASK!! %d=%s", boxIdx, string(g.letter) )
+        if(t == nil){
+          continue
+        }
+        if(t.exactGoal){
+          if(t.boxIdx == boxIdx && t.goalIdx == goalIdx) {
+            state.activeTasks[i] = nil
+            dprintf("REMOVED active GOAL!! %d=%s", boxIdx, string(g.letter) )
+          }
+        } else {
+          // Check if a non-exact goal has been completed:
+          // TODO: make better, what if there are no lvl 2 goals:
         }
       }
       // Find task in unassigned tasks
@@ -194,7 +207,7 @@ func checkAddTask(state *State, boxIdx int){
       }
       // Otherwise add that goal as task
       if(!intended){
-        state.unassignedTasks = append(state.unassignedTasks, Task{true, boxIdx, goalIdx})
+        state.unassignedTasks = append(state.unassignedTasks, Task{true, boxIdx, goalIdx, Coordinate{-1, -1}})
         dprintf("ADDED TASK!! %d=%s", boxIdx, string(g.letter) )
       }
       return
@@ -286,7 +299,7 @@ func generateCombinations(state *State) [][]agentAction {
  * measure the heurisic of the state.
 */
 func nextState(state *State) *State {
-  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.unassignedTasks, state.activeTasks}
+  newState := State{nil, make([][]agentAction, 0), 0, make([]Heap, len(state.robots)), state, make([]*Robot, len(state.robots)), make([]*Box, len(state.boxes)), state.cost+1, state.unassignedTasks, make([]*Task, len(state.activeTasks)), state.heuristicModifier}
 
   for i, robot := range state.robots {
     newState.robots[i] = robot
@@ -294,6 +307,10 @@ func nextState(state *State) *State {
 
   for i, box := range state.boxes {
     newState.boxes[i] = box
+  }
+
+  for i, t := range state.activeTasks {
+    newState.activeTasks[i] = t
   }
 
   return &newState
@@ -306,7 +323,11 @@ func generate_robot_actions(i int, previous *State, visitedStates *map[string]bo
 
   dprintf("GENERATING: %d; %d for %d", robot.pos.x, robot.pos.y, i)
   if(previous.activeTasks[i] != nil){
-    dprintf("TASK: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeTasks[i].boxIdx].letter),previous.boxes[previous.activeTasks[i].boxIdx].pos.x, previous.boxes[previous.activeTasks[i].boxIdx].pos.y, goals[previous.activeTasks[i].goalIdx].pos.x, goals[previous.activeTasks[i].goalIdx].pos.y)
+    if(previous.activeTasks[i].exactGoal){
+      dprintf("TASK: %s (%d,%d) -> (%d,%d)",string(previous.boxes[previous.activeTasks[i].boxIdx].letter),previous.boxes[previous.activeTasks[i].boxIdx].pos.x, previous.boxes[previous.activeTasks[i].boxIdx].pos.y, goals[previous.activeTasks[i].goalIdx].pos.x, goals[previous.activeTasks[i].goalIdx].pos.y)
+    } else {
+      dprintf("Inexact TASK: %s (%d, %d) -> (%d, %d)", string(previous.boxes[previous.activeTasks[i].boxIdx].letter), previous.boxes[previous.activeTasks[i].boxIdx].pos.x, previous.boxes[previous.activeTasks[i].boxIdx].pos.y, previous.activeTasks[i].pos.x,previous.activeTasks[i].pos.y)
+    }
   }
 
 	// MOVE
@@ -319,7 +340,12 @@ func generate_robot_actions(i int, previous *State, visitedStates *map[string]bo
         dprint((&move{direction(robot.pos, neighbour)}).toString())
         actions.Insert(move{direction(robot.pos, neighbour)}, heuristic(newState, 1))
       }
-		}
+    // TODO is this good:
+    // If a box is is on a critical path, it may be in the way, and we reassign goals,
+    // so that if there is a 
+		}/* else if storage_map[neighbour.x][neighbour.y] == 0 {
+      reassignGoals(previous)
+    }*/
 	}
 
 	// PUSH / PULL
@@ -332,17 +358,27 @@ func generate_robot_actions(i int, previous *State, visitedStates *map[string]bo
 				// PULL
 				for _, robot_dest := range neighbours(robot.pos) {
 					if robot_dest != box_dest && isFree(robot_dest, previous) {
+            // reset what may change during the heuristic calculation
+            newState.heuristicModifier = previous.heuristicModifier
+            newState.activeTasks[i] = previous.activeTasks[i]
+            // apply new state
             newState.robots[i] = &Robot{robot_dest, robot.color, robot.next}
             newState.boxes[bIdx] = &Box{box_dest, box.color, box.letter}
             newHash   := getHash(newState)
             if(!(*visitedStates)[newHash]){
               dprint((&pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos), bIdx}).toString())
               actions.Insert(pull{direction(robot.pos, robot_dest), direction(box_dest, box.pos), bIdx}, heuristic(newState, 1))
+            } else {
+              dprint("has visited " + newHash)
             }
 					}
 				}
 			} else if isFree(box_dest, previous) {
 				// PUSH
+        // reset what may change during the heuristic calculation
+        newState.heuristicModifier = previous.heuristicModifier
+        newState.activeTasks[i] = previous.activeTasks[i]
+        // apply new state
         newState.robots[i] = &Robot{box.pos, robot.color, robot.next}
         newState.boxes[bIdx] = &Box{box_dest, box.color, box.letter}
         newHash   := getHash(newState)
