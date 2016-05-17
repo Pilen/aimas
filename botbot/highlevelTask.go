@@ -208,22 +208,36 @@ func heuristic(state *State, heuristic int) int {
   // inside a corridor when the box is not part of its goal
   //////////////////////////////////////////////////////////////////////////////
   boxInCorridorPun := 0
-  //if(state.actualActions != nil){
-  //  for _, action := range *state.actualActions {
-  //    var ac interface{} = action
-  //    switch a := (ac).(type) {
-  //      case *move:
-  //        // not pushing a box
-  //      case *push:
-  //        // is the box being pushed the box from its goal
-  //        if(
-  //        //boxAction := state.boxes[a.boxIdx]
-  //      
-  //      case *pull:
-  //        box := state.boxes[a.boxIdx]
-  //    }
-  //  }
-  //}
+  if(state.actualActions != nil){
+    for i, action := range *state.actualActions {
+      var ac interface{} = action
+      switch a := (ac).(type) {
+        case *move:
+          // not pushing a box
+        case *push:
+          // is the box being pushed the box from its goal
+          if(state.activeTasks[i] == nil){
+            boxInCorridorPun += 1
+            continue
+          }
+          boxPos := state.boxes[a.boxIdx].pos
+          taskBoxIdx := state.activeTasks[i].boxIdx
+          if(a.boxIdx != taskBoxIdx && !rooms[room_map[boxPos.x][boxPos.y]].isRoom){
+            boxInCorridorPun += 1
+          }
+        case *pull:
+          if(state.activeTasks[i] == nil){
+            boxInCorridorPun += 1
+            continue
+          }
+          boxPos := state.boxes[a.boxIdx].pos
+          taskBoxIdx := state.activeTasks[i].boxIdx
+          if(a.boxIdx != taskBoxIdx && !rooms[room_map[boxPos.x][boxPos.y]].isRoom){
+            boxInCorridorPun += 1
+          }
+      }
+    }
+  }
 
   // heuristicModifier is used to remember how many storage goals has been completed.
   //////////////////////////////////////////////////////////////////////////////
@@ -242,7 +256,7 @@ func heuristic(state *State, heuristic int) int {
   }
   result := totalDistance + taskDistance + storageTaskCount + goalCount + storagePun + sameRoad + modifier + misconfiguration + boxInCorridorPun
 
-  //dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d, m: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad, misconfiguration)
+  dprintf("H = %d, tD: %d, gD: %d, gC: %d, sp: %d, sr: %d, m: %d, storCount: %d, mod: %d, bicr: %d", result, totalDistance, taskDistance, goalCount, storagePun, sameRoad, misconfiguration, storageTaskCount, modifier, boxInCorridorPun)
 
   return result
 }
@@ -356,7 +370,7 @@ func heuristicForAgent(i int, r *Robot, state *State, again bool) int {
   box   := state.boxes[task.boxIdx]
 
   distA := checked_distance(robot.pos, box.pos)
-  badness := badnessOfShortestPath(i, r, state)
+  badness := 0// badnessOfShortestPath(i, r, state)
 
   // if we are in a corridor we will punish the robot if the next box in the
   // corridor is not part of its goal:
