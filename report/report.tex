@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Course 02285: AI and MAS}
+\author{Team BotBot: Simon S. Linneberg S152408, Søren Pilgård S160521}
+\date{2/6 2016}
+
+\begin{document}
+
+\maketitle
+
+\section{Abstract}
+Focus on Solving fast.\\
+\section{Introduction}
+Going from heiracical plan with merging to pure lowlevel.\\
+
+\section{Theory}
+- APSP\\
+- online/offline\\
+- Different types of tasks somewhat similar to FSM\\
+- Definition of rooms.\\
+- reservations.\\
+\subsection{Heuristics}
+- storage calculation.\\
+- goal count and distance.\\
+- An agent can un-solve a goal after placing it.\\
+- no recalculation of APSP.\\
+- goal priority.\\
+- Excluding multiple agents in the same corridor.\\ 
+\subsection{Multiagent communication}
+- Take the top actions, works well with APSP if no conflicts.\\
+- This is not as fast as solving individual agents with no other moving (as in presentation)\\
+- plan merging could be better, there is no priority.\\
+- Nops only when merging.\\
+\section{Experiments}
+\subsection{Results}
+- Did well on the speed tracks (MA, only one level was solved)\\
+- Not very many problems where solved, especially MA\\
+\section{Discussion}
+- Multiagent communication does not work well,\\
+- Better way of controlling the different heuristics\\
+- Better use of roads.\\
+- Putting the agent on the right side of a box(according to next goal) in a corridor.\\
+- Use of APSP means that we will always only use the shortest path. (use of wayoints)\\
+- TODO: check that a path exists.\\
+\section{Conclusion}
+\section{References}
+\end{document}
+
