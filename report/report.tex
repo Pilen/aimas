@@ -1,26 +1,171 @@
-\documentclass{article}
-\usepackage[utf8]{inputenc}
+\def\year{2016}
+%File: formatting-instruction.tex
+\documentclass[letterpaper]{article}
 
-\title{Course 02285: AI and MAS}
-\author{Team BotBot: Simon S. Linneberg S152408, Søren Pilgård S160521}
+% Required Packages
+\usepackage{aaai}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage[utf8]{inputenc}
+\frenchspacing
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+
+% Section numbers. 
+\setcounter{secnumdepth}{2}  
+
+\nocopyright
+
+
+\title{Course 02285: AI and MAS - team botbot}
+\author{Simon Skjerning Linneberg\\ S152408 \And Søren Pilgård\\ S160521}
 \date{2/6 2016}
 
 \begin{document}
 
 \maketitle
 
-\section{Abstract}
-Focus on Solving fast.\\
-\section{Introduction}
-Going from heiracical plan with merging to pure lowlevel.\\
+\begin{abstract}
+Our solution to the AIMAS programming project is an offline planner using A*
+with an inadmissible heuristic. The heuristic is a weighted sum of different heuristics,
+including the agent-box-goal distance, a storage estimate of unused blocks, and
+the number of unfulfilled goals.\\
 
-\section{Theory}
+In multiagent levels all agents are aware of each other.\\
+
+We focused on solving as many levels as fast as possible, and did not mind if we
+got a longer solution if it was faster or could solve more levels. For a single
+agent our solution is decent and could solve 5/14 single agent competition levels,
+but the multiagent planer did not work very well, and could only solve one level,
+although it got the fastest solution to that level.
+\end{abstract}
+
+\section{Introduction}
+Initially we considered creating a Hierarchical Task Network (HTN). The highlevel
+planner would decide what agents moved which box to what goal. The lowlevel planner
+would then either move a box to a goal, or away to a storage area.
+
+This had some implementation problems, for example a task to move a box to a goal
+would not tell us where the agent would be after the goal had been completed, which
+could be important in a corridor where the box would block the agent. Another detail
+is that each  highlevel action may be solved by a different number of lowlevel actions.
+
+Instead we assigned each goal a box of the same letter based on the distance, and
+added a task to a list of tasks, so that each agent can choose a fitting task
+when it is free. This solves the problems above, and though it is not as 'smart'
+as doing an actual highlevel plan we expect it to be as efficient in practice.\\
+
+When an agent completes a task, it is removed, and if an agent move a box away from
+a goal, a new task is created. The tasks are thus stored together with the state.
+We also add 'storage' task if an agent moves into a corridor and a box (which is not
+part of the agents current task) is in the way (See the heuristic section).
+
+\section{Background}
+\section{Methods}
+When preprocessing a level we calculate and store the all pairs shortest path (APSP)
+for each cell, rooms and goal priorities.
 - APSP\\
 - online/offline\\
 - Different types of tasks somewhat similar to FSM\\
 - Definition of rooms.\\
 - reservations.\\
 \subsection{Heuristics}
+The final weighted heuristic is:
+\begin{verbatim}
+w1 * totalDistance +
+w2 * taskDistance +
+w3 * storageTaskCount +
+w4 * goalCount +
+w5 * storagePunishment +
+w6 * sameRoad +
+w7 * modifier +
+w8 * misconfiguration +
+w9 * boxInCorridorPunishmet
+\end{verbatim}
+These are all described below.
+
+We could not make misconfiguration and boxInCorridorPunishmet
+work properly, so they where disabled in the final build.
+\subsubsection{totalDistance}
+If the agent is moving a box to a goal, this is the distance from the agent
+to the box plus the distance from the box to its goal. If the agent is storing
+a box, this is the distance from the agent to the box plus the distance from the
+box to a nearby storage cell (see below).
+
+This heuristic prioritize states where the agent is close to the box it is moving,
+and where the box is close to its goal.
+
+Since we have calculated APSP, this can be calculated effectively (not considering other boxes/agents)\\
+
+\subsubsection{taskDistance}
+taskDistance is the distance between each box and its goal summed over each task
+that has not been assigned to an agent. This makes states more attractive, if
+a box is moved closer to its goal, even if it is not the active task of an agent.
+
+This should not dominate the totalDistance.
+
+\subsubsection{goalCount}
+The number of goal that does not have a (valid) box on top of them. This makes it
+unattractive to move a box that already fulfills a goal, and was added when we found
+out that agents would simply remove boxes that it had just moved to its goal.
+
+\subsubsection{storageTaskCount}
+The number of storage goal that is active, or needs to be choosen by an agent.
+This is weighted negative (see modifier).
+
+\subsubsection{goalCount}
+This is the number of goal that does not have a (valid) box ontop. They are only
+counted if the priority of the goal is equal to or higher than the maximum priority
+goal that has not been completed.
+
+This heuristic was introduced, since not considering the number of completed goals
+would make the heuristic higher for a state where a task had just been completed,
+since the task is replaced by a new task that would typically be much further away,
+thus increasing the above heuristics. This might be considered a hack. The goalCount
+heuristic must be weighted so high that it is better to choose the new task, than to
+check the previous states, where that particular task had not been completed.
+
+The reason that only the high priority goals are counted, is to encourage moving
+boxes on low priority goals. The reason that they are low priority is because that
+they may be in the way of other goals, so they must be able to be moved.
+
+\subsubsection{storagePunishment}
+Adds the storage level for each box that is not part of an active task, and
+punishes based on the storage level of its position (see storage level).
+
+This encourages agents to move boxes to free storage area.
+
+\subsubsection{sameRoad}
+If multiple agents are in the same corridor, this is punished, to refrain multiple
+agents from blocking up a corridor. This could be improved, so that multiple agents
+can go in the same direction, but we did not have time for that.
+
+\subsubsection{modifier}
+If a storage task is completed, it will be replaced by another task, which most likely
+have a higher heuristic cost. Therefore a state where the storage task has not been completed
+yet, will be preferred over the state where it has been completed, which is obviously bad
+for A*. This was also a problem when completing a normal task, which could be countered
+by punishing the number of unfinished tasks a lot.
+
+This cannot be done in the case of storage tasks, since we do not have a maximum number of
+storage tasks like in the case of ordinary tasks. If we add a storage task there will be
+a task more than before, and the heuristic cost of completing the storage task will make that
+state unattractive. Therefore storageTaskCount it weighted negative. This way having a storage
+task will be more attractive that not. It must be even more attractive to finish the storage
+task than to have it active. This is solved by adding the modifier count to the state.
+
+Each time a storage task is completed, the modifier is incremented. Since the weight is
+negative, it is attractive to have stored a box. It should not be more attractive than
+completing a goal though.
+
+\subsubsection{misconfiguration}
+This is an estimate of how much corridors leading into a room is blocked.
+
+\subsubsection{boxInCorridorPunishmet}
+The number of agents that are pushing/pulling a box into a corridor when that box
+is not part of the agents current task. This is to avoid blocking corridors with boxes.
+
 - storage calculation.\\
 - goal count and distance.\\
 - An agent can un-solve a goal after placing it.\\
@@ -37,13 +182,34 @@ Going from heiracical plan with merging to pure lowlevel.\\
 - Did well on the speed tracks (MA, only one level was solved)\\
 - Not very many problems where solved, especially MA\\
 \section{Discussion}
+Botbot only solved one multi agent level, and not even our own. Even though our
+implementation uses APSP as heuristic, and therefore should be able to solve
+levels without conflicts easily, and indeed was, at some point the multiagent
+planner stopped working properly. We got problems solving a level such as MAmultiagentSort.lvl
+from the test suite, which had been solved easily before, and we could not
+figure out what had caused this deficiency.\\
+
+While the communication approach of botbot should work fine when there are
+no conflicts, it turned out to give problems when a box blocks the way for
+an agent in a corridor. The agent moves away as it should, but then the fastest
+way to get to the goal is to move back. If it was only a single agent, this would
+mean that the state had been visited and could be discarded. For a multiagent system
+however, the other agents would have moved and therefore the state is not considered
+visited by A*. This causes an agent to move back and forth between two cells, and
+was a real problem in MApackman.lvl.
+
+
 - Multiagent communication does not work well,\\
 - Better way of controlling the different heuristics\\
 - Better use of roads.\\
 - Putting the agent on the right side of a box(according to next goal) in a corridor.\\
 - Use of APSP means that we will always only use the shortest path. (use of wayoints)\\
+\section{Future work}
 - TODO: check that a path exists.\\
 \section{Conclusion}
 \section{References}
+\bibliographystyle{aaai}
+\bibliography{bibliography}
+
 \end{document}
 
