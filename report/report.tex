@@ -18,7 +18,7 @@
 \nocopyright
 
 
-\title{Course 02285: AI and MAS - team botbot}
+\title{Course 02285: AI and MAS - Team botbot}
 \author{Simon Skjerning Linneberg\\ S152408 \And Søren Pilgård\\ S160521}
 \date{2/6 2016}
 
@@ -27,7 +27,7 @@
 \maketitle
 
 \begin{abstract}
-Our solution to the AIMAS programming project is an offline planner using A*
+Our solution to the AIMAS programming project, botbot, is an offline planner using A*
 with an inadmissible heuristic. The heuristic is a weighted sum of different heuristics,
 including the agent-box-goal distance, a storage estimate of unused blocks, and
 the number of unfulfilled goals.\\
@@ -172,15 +172,75 @@ is not part of the agents current task. This is to avoid blocking corridors with
 - no recalculation of APSP.\\
 - goal priority.\\
 - Excluding multiple agents in the same corridor.\\ 
+
 \subsection{Multiagent communication}
-- Take the top actions, works well with APSP if no conflicts.\\
+Though our initial plan was to focus on the multiagent part, we realized that
+a good single agent planner was needed to make multiagent planning work,
+and since we are a small group we did not have time to improve this part.\\
+
+Since we use the APSP-heuristic, it should be easy to solve a level if
+there are no conflicts. Picking the action that leads
+the agent closest to completition of its task, can be done for each agent,
+and APSP would tell us what that action is. When there are no conflicts,
+the individual actions can easily be merged.\\
+
+In practice conflicts must be handled. This is done by letting each agent
+genereate all possible actions. Then we pick the top action for each agent,
+and try to merge them. The actions are added to the joint action one by one
+sorted by the agents number. If an action conflicts with a previously added
+action it is replaced with a noop.\\
+
+Both the new state and the old state is put back on the queue of state that have
+not been explored. If the old state is picked again, we pick the top two actions
+for each agent, and generate all combinations of those actions. The resulting states
+are put in the queue if they have not been visited before. We repeat this until
+all combinations of actions the state have been checked, or we have found a solution.\\
+
+The reasoning behind this is that if there are a low number of conflicts APSP
+then the top agent actions would be valid, and we would rarely have to go back
+to a prevous state. Finding the combinations as needed should improve memory usage.
+
+In practice we doubt that this has any real effect (see Discussion).\\
+
 - This is not as fast as solving individual agents with no other moving (as in presentation)\\
-- plan merging could be better, there is no priority.\\
 - Nops only when merging.\\
-\section{Experiments}
-\subsection{Results}
-- Did well on the speed tracks (MA, only one level was solved)\\
-- Not very many problems where solved, especially MA\\
+\section{Experiments/Results}
+todo COMPUTER SPECS:\\
+
+Botbot was informaly tested on the handout levels. We did not keep time/action
+information for the different versions of botbot. As described in the discussion,
+the communication broke for some multiagent levels that where previously solvable.
+
+From our experiments we could see that storage tasks and same road heuristics enabled
+us to solve some levels that we couldn't before, including the lower left part of skynet
+with goals in a corridor that will block access to the last goal, though it did not
+nessesarily improve on solutions that where already solveable.
+
+The stats for the competition levels that we solved can be seen below:\\
+
+\begin{tabular}{c|c|c}
+Level & action score & time score \\
+\hline
+TODO
+\end{tabular}\\
+
+botbot's placement in the contest can be seen below:\\
+
+\begin{tabular}{c|c|c}
+ & Number of Actions & Solution Time \\
+\hline
+Multiagent & 12 & 6 \\
+Singleagent & 12 & 5 \\
+\end{tabular}\\
+
+These results reflects we focused on creating a fast planner instead of finding
+a near optimal solution. In the multiagent track we got a decent placement, even
+though we only solved one level, because we got the fastest solution time for that level.
+
+It was not our own level, so the speed was not obtained by tuning the AI for that
+specific level.
+
+
 \section{Discussion}
 Botbot only solved one multi agent level, and not even our own. Even though our
 implementation uses APSP as heuristic, and therefore should be able to solve
@@ -190,7 +250,7 @@ from the test suite, which had been solved easily before, and we could not
 figure out what had caused this deficiency.\\
 
 While the communication approach of botbot should work fine when there are
-no conflicts, it turned out to give problems when a box blocks the way for
+no/little conflicts, it turned out to give problems when a box blocks the way for
 an agent in a corridor. The agent moves away as it should, but then the fastest
 way to get to the goal is to move back. If it was only a single agent, this would
 mean that the state had been visited and could be discarded. For a multiagent system
@@ -198,18 +258,57 @@ however, the other agents would have moved and therefore the state is not consid
 visited by A*. This causes an agent to move back and forth between two cells, and
 was a real problem in MApackman.lvl.
 
+This lead us to believe that it would be better to create full plans for each agent
+individually without being aware of other and then merge them. We did not have time
+to experiment with this.\\
 
-- Multiagent communication does not work well,\\
+%Summing up the heuristic makes it difficult to control. Examples of this is the
+%\texttt{sameRoad} punishment. Instead of marking a move
+
+Our use of corridors are currently very limited. We punish each time multiple agents
+are in the same corridor, so that they will not go in the way of each other. This
+heuristic can be much more sophisticated. For example, there are no need to punish
+when multiple agents are moving though a corridor in the same direction.
+
+As soon an agent has pushed/pulled into a corridor not containing its goal, there
+is no need to let them move back and forth. These actions could be disabled to
+generate less states without making the planner less general.\\
+
+Another way to use the roads would be to put the agent on the right side of
+a goal when a task is finished. This could be done by checking if the current task
+has its goal inside a corridor. If so, when the agent goes inside that corridor
+it must either push or pull (depending on what side of the goal is should be on).
+
+This could also be implemented by punishing if the agent pushes where a pull is
+preferred or the other way around. Then it is possible to do both push and pull
+if needed, while the estimated better solution is preferred.
+
+A problem with APSP is the lack of longer alternative routes. There are cases
+where some boxes on the shortest path is expensive to move. For example if
+the color is wrong, and another agent must be used. In this case it would be
+effective to be able to use longer paths, perhaps going through other rooms.
+
+Only using APSP for pathfinding heuristic makes it very hard to find solutions
+that differ from the shortest path. The solutions that we considered (but did not
+have time to implement) is to create waypoints using the room/corridor graph
+that is already calculated. Another way would be to calculate the APSP multiple
+times, considering boxes. This was abandoned since there where levels (such as bispebjerg)
+where the APSP calculation took significantly time. This could possibly be countered
+by only calculating the APSP rarely, like when a goal has been completed, or
+after some number of actions. Further the APSP could be lazily evaluated thus
+only calculating the cells that are needed.\\
+
 - Better way of controlling the different heuristics\\
-- Better use of roads.\\
-- Putting the agent on the right side of a box(according to next goal) in a corridor.\\
-- Use of APSP means that we will always only use the shortest path. (use of wayoints)\\
+- We would have liked to solve more levels.\\
 \section{Future work}
 - TODO: check that a path exists.\\
+- Online\\
+- advanced merger\\
 \section{Conclusion}
+Botbot did not solve many levels. Especially the multiagent part was not
+very effective. 
 \section{References}
 \bibliographystyle{aaai}
 \bibliography{bibliography}
 
 \end{document}
-
