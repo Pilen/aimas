@@ -46,11 +46,11 @@ Initially we considered creating a Hierarchical Task Network (HTN). The highleve
 planner would decide what agents moved which box to what goal. The lowlevel planner
 would then either move a box to a goal, or away to a storage area.
 
-A problem of this strategy of turning our solution into a set of discreete
+A problem of this strategy of turning our solution into a set of discrete
 tasks was that not all problems can be solved by two or more such tasks in
 sequence. We were able to create some fairly small levels that completely broke the
 approach by having the algorithm trying to divide problem in various ways, while
-a simple A* solution by the lowlevel planner looking at just the surronding area had no problems.
+a simple A* solution by the lowlevel planner looking at just the surrounding area had no problems.
 
 Further there were some implementation problems, for example a task to move a box to a goal
 would not tell us where the agent would be after the goal had been completed, which
@@ -58,7 +58,7 @@ could be important in a corridor where the box would block the agent. Another de
 is that each  highlevel action may be solved by a different number of lowlevel actions.
 
 Instead we tried to flip the approach, letting the lowlevel planner create a
-solution, quided by a set of current tasks. We assigned each goal a box of the
+solution, guided by a set of current tasks. We assigned each goal a box of the
 same letter based on the distance, and added a task to a list of tasks, so that
 each agent can choose a fitting task when it is free. This solves the problems
 above, and though it is not as 'smart' as doing an actual highlevel plan we
