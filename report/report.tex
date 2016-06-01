@@ -309,6 +309,20 @@ only calculating the cells that are needed.\\
 - Better way of controlling the different heuristics\\
 - We would have liked to solve more levels.\\
 
+A number of our problems might stem from our method of development.
+Though we did put some effort into a logging system to get around how the server
+environment called our program, we did not have a proper testing/evaluation
+framework.
+When working with a new idea for a heuristic we took a level exhibiting a
+problem, and tweaked our heuristics to handle this better.
+Unfortunately by not rigorously evaluating the improvement of each change on
+multiple/every level we were bound to hit some local optimum. This is especially
+troublesome when deciding how to weigh contributions from multiple heuristics.
+Thus by improving some areas we had regressions, as an example, our final
+solution were no longer able to solve our own level, though it previously did it
+flawlessly in little to no time. With a better testing setup we could be notified of how
+each change altered the behaviour thus enabling much more focused work.
+
 \section{Future work}
 - TODO: check that a path exists.\\
 - Online\\
