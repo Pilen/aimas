@@ -75,7 +75,7 @@ what heuristics we use.
 
 \subsection{Preprocessing}
 We split the map into rooms and corridors. A corridor is a cell that has at most
-two adjacent cells that are not walls, and is not a corner (if the cell is part of
+two adjacent\footnote{To the north, south, east or west. Not north-west and other corners.} cells that are not walls, and is not a corner (if the cell is part of
 a 2x2 square of cells that are not walls it is a corner). This is what we would
 intuitively consider corridors and rooms. We create a map where each cell gives
 the index to the corridor/room, and associate up to two connected rooms with each corridor,
@@ -92,7 +92,7 @@ value 1, and any other cell (interior of a room) has storage value 2.\\
 
 The All Pairs Shortest Path (APSP) map is calculated once in the beginning, and never changed (see the discussion
 part for alternatives). We do not consider boxes, goals or agents when calculating
-this.
+this.\\
 
 We try to establish a simple heuristic for which goals must be solved first.
 This is the goal priority. The basic idea is that goals deep in coridors,
@@ -106,13 +106,11 @@ the new priority and flows on with this new value. A position is always given
 the minimum priority, this way alternative routes can be taken without
 increasing the priority. The end result is a basic map of how many goals has to
 be crossed before getting to the goal from the closest robot.
+
 The heuristic is fairly effective in many use cases as goals at the end of
 corridors has to be solved first, unfortunately it can be fooled if a useless
 starts behind it, thus negating the priority, or it can be fooled if the goals
 has to be solved by backing in to them thus solving the lowest priority first.
-
-- online/offline\\
-- Different types of tasks somewhat similar to FSM\\
 
 \subsection{Heuristics}
 The final weighted heuristic is:
@@ -243,6 +241,14 @@ In practice we doubt that this has any real effect (see Discussion).\\
 In the presentations we saw how time effective it was to only let one agent move at
 the same time. If the time taken really was our only priority we should probably
 have done that aswell.
+
+\subsection{Different tasks}
+We have a task different tasks to put a box on a goal, and to move a box to
+a storage area. This is used if a box blocks a corridor. While we do not explicitly 
+model a FSM, we still implicit have a state for storage and a state for putting
+boxes on goals. The agents transitions between these states when they enter
+a corridor with a box, or when they complete a goal. This idea is then somewhat
+similar to the FSM directed planning form \cite{JO}, although more subtle.
 
 \section{Related work}
 Our problem is somewhat similar to the sokoban game, which is well covered by

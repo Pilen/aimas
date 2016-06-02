@@ -6,6 +6,12 @@ Adi~Botea, Martin~Müller, J.~S.
 \newblock Using abstraction for planning in sokoban.
 \newblock {\em unknown}.
 
+\bibitem[\protect\citeauthoryear{Orkin}{2006}]{JO}
+Orkin, J.
+\newblock 2006.
+\newblock Three states and a plan: The a.i. of f.e.a.r.
+\newblock {\em GDC}.
+
 \bibitem[\protect\citeauthoryear{Virkkala}{2011}]{sokobanMA}
 Virkkala, T.
 \newblock 2011.
