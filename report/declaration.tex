@@ -1,14 +1,65 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 
-\title{Course 02285: AI and MAS}
+\title{Course 02285: AI and MAS - botbot}
 \author{Simon S. Linneberg S152408, Søren Pilgård S160521}
 \date{2/6 2016}
 
 \begin{document}
-
 \maketitle
+This is the group declaration for team botbot.\\
 
-\section{Question 1}
+For more details, please see our github project at https://github.com/Pilen/aimas/tree/merge\_branche.
+Note that merge\_branche is more resent than the master branch.\\
+
+Simon made the single agent level, and Søren did the multiagent level.\\
+
+The overall architecture of our client, and strategy used to plan was discussed
+and decided in common during our group meetings.\\
+
+\section{Programming project}
+The initial communication with the server was done by Simon, and later extended
+by Søren to log the server response.\\
+
+The logging part of the client, including a logging server was done by Søren.\\
+
+The heap and heap test was done by Søren.\\
+
+APSP and room/corridor detection was done by Simon.\\
+
+Goal priorities are done by Søren.\\
+
+We both worked on the tools file.\\
+
+Simon created functions that would generate move, push or pull actions from a point
+to another without actual searching. This was not used in the final project.\\
+
+Due to communication faults we both implemented A*. Simon's version was kept, although
+this was build upon some of Søren's code. This includes the code for generating
+transitions.\\
+
+The check to see if a new task has occurred or has finished was done by Simon.\\
+
+Multiagent merging was done by Simon.\\
+
+Storage tasks, storage calculation  and assigning of initial tasks where done by Simon.\\
+
+\subsection{Heuristics}
+totalDistance, taskDistance, goalCount, StorageTaskCount, storagePun, sameRoad, boxInCorridorPun
+and the state modifier was done by Simon.\\
+
+misconfiguration and badness was done by Søren.
+
+\section{Report}
+We have both contributed to the outline.\\
+Søren wrote about goal priorites, the rest of the methods section was done by Simon.\\
+
+Experiments mostly by Simon.\\
+
+Søren wrote about testing in the discussion, the rest of the discussion was done by Simon.\\
+
+Releated work, future work by Simon.\\
+
+Conclusion mostly by Søren.
 \end{document}
 
