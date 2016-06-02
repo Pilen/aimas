@@ -90,11 +90,26 @@ by the initial tasks.
 A cell in a corridor, and any cell in a room connected to a corridor has storage
 value 1, and any other cell (interior of a room) has storage value 2.\\
 
-The APSP map is calculated once in the beginning, and never changed (see the discussion
+The All Pairs Shortest Path (APSP) map is calculated once in the beginning, and never changed (see the discussion
 part for alternatives). We do not consider boxes, goals or agents when calculating
 this.
 
-todo: goal priority.\\
+We try to establish a simple heuristic for which goals must be solved first.
+This is the goal priority. The basic idea is that goals deep in coridors,
+especially dead ends most likely has to be solved before goals at the start of
+the corridor. To determine how ``deep'' into a corridor a goal is a flood-fill
+like algorithm is used. The algorithm uses a queue of unfinished positions and a
+map of ``colors'' for each position, the color or priority is an integer.
+The color/priority under a robot is defined as 0, we then flood the color out,
+when the color passes a goal it increases by one and thus colors the goal with
+the new priority and flows on with this new value. A position is always given
+the minimum priority, this way alternative routes can be taken without
+increasing the priority. The end result is a basic map of how many goals has to
+be crossed before getting to the goal from the closest robot.
+The heuristic is fairly effective in many use cases as goals at the end of
+corridors has to be solved first, unfortunately it can be fooled if a useless
+starts behind it, thus negating the priority, or it can be fooled if the goals
+has to be solved by backing in to them thus solving the lowest priority first.
 
 - online/offline\\
 - Different types of tasks somewhat similar to FSM\\
