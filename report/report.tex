@@ -69,15 +69,36 @@ a goal, a new task is created. The tasks are thus stored together with the state
 We also add 'storage' task if an agent moves into a corridor and a box (which is not
 part of the agents current task) is in the way (See the heuristic section).
 
-\section{Background}
 \section{Methods}
-When preprocessing a level we calculate and store the all pairs shortest path (APSP)
-for each cell, rooms and goal priorities.
-- APSP\\
+First we describe the preprocessing done to facilitate fast heuristics, and then
+what heuristics we use.
+
+\subsection{Preprocessing}
+We split the map into rooms and corridors. A corridor is a cell that has at most
+two adjacent cells that are not walls, and is not a corner (if the cell is part of
+a 2x2 square of cells that are not walls it is a corner). This is what we would
+intuitively consider corridors and rooms. We create a map where each cell gives
+the index to the corridor/room, and associate up to two connected rooms with each corridor,
+and any number of corridors connected with rooms.
+
+With this definition the cell of a T-intersection or cross is considered a room.\\
+
+We calculate the storage value for each cell. A cell on a 'critical' path has storage
+value 0. A critical path is the shortest path from a goal to its box, as calculated
+by the initial tasks.
+
+A cell in a corridor, and any cell in a room connected to a corridor has storage
+value 1, and any other cell (interior of a room) has storage value 2.\\
+
+The APSP map is calculated once in the beginning, and never changed (see the discussion
+part for alternatives). We do not consider boxes, goals or agents when calculating
+this.
+
+todo: goal priority.\\
+
 - online/offline\\
 - Different types of tasks somewhat similar to FSM\\
-- Definition of rooms.\\
-- reservations.\\
+
 \subsection{Heuristics}
 The final weighted heuristic is:
 \begin{verbatim}
@@ -95,6 +116,7 @@ These are all described below.
 
 We could not make misconfiguration and boxInCorridorPunishmet
 work properly, so they where disabled in the final build.
+
 \subsubsection{totalDistance}
 If the agent is moving a box to a goal, this is the distance from the agent
 to the box plus the distance from the box to its goal. If the agent is storing
@@ -174,13 +196,6 @@ This is an estimate of how much corridors leading into a room is blocked.
 The number of agents that are pushing/pulling a box into a corridor when that box
 is not part of the agents current task. This is to avoid blocking corridors with boxes.
 
-- storage calculation.\\
-- goal count and distance.\\
-- An agent can un-solve a goal after placing it.\\
-- no recalculation of APSP.\\
-- goal priority.\\
-- Excluding multiple agents in the same corridor.\\
-
 \subsection{Multiagent communication}
 Though our initial plan was to focus on the multiagent part, we realized that
 a good single agent planner was needed to make multiagent planning work,
@@ -210,8 +225,56 @@ to a prevous state. Finding the combinations as needed should improve memory usa
 
 In practice we doubt that this has any real effect (see Discussion).\\
 
-- This is not as fast as solving individual agents with no other moving (as in presentation)\\
-- Nops only when merging.\\
+In the presentations we saw how time effective it was to only let one agent move at
+the same time. If the time taken really was our only priority we should probably
+have done that aswell.
+
+\section{Related work}
+Our problem is somewhat similar to the sokoban game, which is well covered by
+literature. Since agents in our problem can pull boxes back, and around corners,
+we cannot reach a state that cannot be undone, and (assuming that all boxes are
+reachable in the beginning) we cannot put a box where it cannot be reached. Two
+things that must be considered in sokoban.
+
+In \cite{sokobanMA} an overview of techniques used for solving sokoban is given.
+We will now review the sections that are most interesting for our problem.\\
+
+Instead of hashing the whole state (like we do) they suggest using transposition
+tables where two states are considered the same if the boxes are at the same positions,
+and the reachability area of the player is the same. This will make many states
+the same, thus decreasing the size of the search space. This is appealing in
+the sokoban problem, since the reachability area may permanently change. This
+or a similar technique could perhaps be used to simplify the multiagent problem.\\
+
+They also mention the use of 'intertia' to encourage pushing the same box.
+We do not use inertia the same way, but our tasks has a similar effect by
+always considering the same box. The inertia is a bit more flexible, since
+it can change, while ours only changes if we create a storage goal.\\
+
+Another technique in \cite{sokobanMA} is the use of macro moves, to make
+sure that a box pushed into a corridor must be pushed the whole way through
+(unless its goal is inside the corridor). We did not have time to implement
+this fully, but we find the corridors, and use this to discourage multiple agents
+going into the same corridor (see heuristics).
+
+Macro moves are especially important in sokoban where it is possible to have
+one way tunnels.\\
+
+We where considering using a macro move to force an agent to use the shortest
+path to get to a box, or to push/pull the box to a goal, and then only use actual
+planning in case of collisions. This was abandoned since it would be difficult
+to solve conflicts on such paths.\\
+
+They use a similar definition of rooms as we do, and further describes articulation
+cells which will divide a level in two parts if replaced by a wall. This is
+especially important in sokoban since we cannot always move blocks, but may
+also be used in our problem to store boxes in the right side of a level.\\
+
+In \cite{highlevelSokoban} a discussion of using hierarchical search for
+planing in sokoban is given. They use a highlevel planer to move boxes between
+rooms by creating a graph of rooms and corridors. Inside rooms a normal lowlevel
+planner is used. In our problem macro move can be used inside tunnels.
+
 \section{Experiments/Results}
 todo COMPUTER SPECS:\\
 
@@ -247,7 +310,6 @@ though we only solved one level, because we got the fastest solution time for th
 
 It was not our own level, so the speed was not obtained by tuning the AI for that
 specific level.
-
 
 \section{Discussion}
 Botbot only solved one multi agent level, and not even our own. Even though our
@@ -304,7 +366,11 @@ times, considering boxes. This was abandoned since there where levels (such as b
 where the APSP calculation took significantly time. This could possibly be countered
 by only calculating the APSP rarely, like when a goal has been completed, or
 after some number of actions. Further the APSP could be lazily evaluated thus
-only calculating the cells that are needed.\\
+only calculating the cells that are needed.
+
+In \cite{sokobanMA} it is suggested to use room to room transitions for
+a highlevel search.\\
+
 
 Goal priority never change in our implementation, however there could be cases
 where this would be usefull. TODO: where?\\
@@ -340,6 +406,10 @@ We would also like to experiment with making the planner online. This would make
 it unnecessary to have a negative weighted modifier to count the storage. Since
 the focus is on finding the solution fast and not finding the shortest solution
 using online planning is likely a good choice.\\
+
+We where considering to use a storage value of 3 to cells that is not adjacent to
+a wall, so that we can keep the walls free if there is enough storage space.
+This will make the bots able to walk from room to room.\\
 \section{Conclusion}
 Botbot did not solve many levels. Especially the multiagent part was not
 very effective. The planner did better in the time tracks compared
@@ -347,8 +417,6 @@ to the number of actions in the competition, which was our focus.
 
 We have given our ideas of improvements for botbot.
 
-\section{References}
 \bibliographystyle{aaai}
 \bibliography{bibliography}
-
 \end{document}

@@ -1,0 +1,15 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Adi~Botea}{unknown}]{highlevelSokoban}
+Adi~Botea, Martin~Müller, J.~S.
+\newblock unknown.
+\newblock Using abstraction for planning in sokoban.
+\newblock {\em unknown}.
+
+\bibitem[\protect\citeauthoryear{Virkkala}{2011}]{sokobanMA}
+Virkkala, T.
+\newblock 2011.
+\newblock Solving sokoban.
+\newblock {\em University of Helsinki - Master's Thesis}.
+
+\end{thebibliography}
