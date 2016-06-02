@@ -277,8 +277,11 @@ planner is used. In our problem macro move can be used inside tunnels.
 
 \section{Experiments/Results}
 todo COMPUTER SPECS:\\
+The results were calculated on a Thinkpad T420, i5 3.2 GHz, 8GB memory.
+Running Arch linux, 4.5.1-1, with few simultaneous programs running and a very
+lightweight window manager (no desktop environment).
 
-Botbot was informaly tested on the handout levels. We did not keep time/action
+Botbot was informally tested on the handout levels. We did not keep time/action
 information for the different versions of botbot. As described in the discussion,
 the communication broke for some multiagent levels that where previously solvable.
 
@@ -415,7 +418,34 @@ Botbot did not solve many levels. Especially the multiagent part was not
 very effective. The planner did better in the time tracks compared
 to the number of actions in the competition, which was our focus.
 
-We have given our ideas of improvements for botbot.
+Overall the solution is not that effective. One problem is that we end up making
+a lot of calculations again and again for what is almost the same state. We
+might find out that one strategy is bad and leads to a deadend, but we don't
+remember this when calculating a heuristic score again for another state that is
+very similar but not quite the same. This overhead of recalculating the same
+again and again incurs an overhead making the solution bad for a lot of levels.
+
+Further the lack of a proper testing/evaluation framework makes it very hard to
+tweak heuristics and weigh them, making it very easy to spend a lot of effort
+for very little (or even negative) gain in many levels.
+
+Our solution gave a lot of insights for how to implement various highlevel
+heuristics, but unfortunately a lot of problems can't be easily deduced using a
+correct guess. The architecture is most likely a deadend if more advanced levels
+are the goal. But for smaller levels the approach has the potential to quicly
+find a solution, even if it is not the most effective solution in number of
+performed steps.
+
+If we had to do it all over again, our first approach might actually have been
+better, especially if we had come up with a solution for using our solution when
+needed. Thus we could better take a highlevel approach, but when some part of
+the problem cant clearly be divided into sequences of tasks, it might choose our
+heuristic driven search for a smaller part of the problem. This way we would
+have the best of both worlds. Of course, having such a hybrid solution comes
+with its own problems, namely how to detect that the current strategy is not
+optimal and to switch, and secondly how to integrate the two approaches cleanly
+to ensure a valid solution is found and that the entire decision tree is searched eventually.
+
 
 \bibliographystyle{aaai}
 \bibliography{bibliography}
