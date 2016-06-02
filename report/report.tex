@@ -276,7 +276,6 @@ rooms by creating a graph of rooms and corridors. Inside rooms a normal lowlevel
 planner is used. In our problem macro move can be used inside tunnels.
 
 \section{Experiments/Results}
-todo COMPUTER SPECS:\\
 The results were calculated on a Thinkpad T420, i5 3.2 GHz, 8GB memory.
 Running Arch linux, 4.5.1-1, with few simultaneous programs running and a very
 lightweight window manager (no desktop environment).
@@ -374,9 +373,7 @@ only calculating the cells that are needed.
 In \cite{sokobanMA} it is suggested to use room to room transitions for
 a highlevel search.\\
 
-
-Goal priority never change in our implementation, however there could be cases
-where this would be usefull. TODO: where?\\
+Goal priority never change in our implementation.\\
 
 A number of our problems might stem from our method of development.
 Though we did put some effort into a logging system to get around how the server
@@ -402,7 +399,7 @@ one agent going back and forth will be considered alternative states, unlike now
 where other agents changes the state when one agent does the same actions.
 
 Another solution is to only consider part of the state when determining if it has
-been visited before. This was suggested in TODO: SOURCE, but is difficult to implement
+been visited before. Something similar was suggested in \cite{sokobanMA}, but is difficult to implement
 properly.\\
 
 We would also like to experiment with making the planner online. This would make
